@@ -2,9 +2,9 @@
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
-import { useSettingsSlice } from '../store'
+import { useStore, useSettingsSlice } from '../store'
 import { getResolvedSettings } from '../scene/automatedSettings'
-import { KEYBOARD_LAYOUT, WHITE_KEY_LENGTH } from '../keyboard/layout'
+import { getKeyboardLayout, WHITE_KEY_LENGTH } from '../keyboard/layout'
 
 const HIT_LINE_KEYS = [
   'hitLineBarHalo',
@@ -76,6 +76,7 @@ const WAVE_FRAGMENT = /* glsl */ `
   uniform float uMorphSpeed;
   uniform float uHalo;
   uniform float uGrain;
+  uniform float uPlaneWidth;
 
   float hash21(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -112,7 +113,7 @@ const WAVE_FRAGMENT = /* glsl */ `
     // give a parallax effect — broad slow wave with small fast ripples
     // riding on it, which reads as the wind+particle quality from the
     // reference image.
-    float xs = vUv.x * uWaveScale;
+    float xs = vUv.x * uWaveScale * (uPlaneWidth / 12.72);
     float scroll = uTime * uScrollSpeed;
     float morph = uTime * uMorphSpeed;
     // Layer 1 — broad slow wave (the dominant shape)
@@ -206,6 +207,7 @@ export function HitLine() {
         uMorphSpeed: { value: settings.hitLineWaveMorphSpeed },
         uHalo: { value: settings.hitLineWaveHalo },
         uGrain: { value: settings.hitLineWaveGrain },
+        uPlaneWidth: { value: 12.72 },
       },
       vertexShader: VERTEX_SHADER,
       fragmentShader: WAVE_FRAGMENT,
@@ -260,12 +262,16 @@ export function HitLine() {
     const hitYR = r.keyboardY + WHITE_KEY_LENGTH
     if (barMeshRef.current) barMeshRef.current.position.y = hitYR + r.hitLineBarY
     if (waveMeshRef.current) waveMeshRef.current.position.y = hitYR + r.hitLineWaveY
+
+    const layout = getKeyboardLayout(useStore.getState().settings.keyboardSize)
+    waveMaterial.uniforms.uPlaneWidth.value = layout.totalWidth + PLANE_WIDTH_PAD
   })
 
   if (!settings.hitLineEnabled) return null
 
   const hitY = settings.keyboardY + WHITE_KEY_LENGTH
-  const planeWidth = KEYBOARD_LAYOUT.totalWidth + PLANE_WIDTH_PAD
+  const layout = getKeyboardLayout(useStore((st) => st.settings.keyboardSize))
+  const planeWidth = layout.totalWidth + PLANE_WIDTH_PAD
 
   // z = 0.14 / 0.141: in front of the 3D black keys (top z ≈ 0.09),
   // falling notes (0.1) and landing flashes (0.105) so the laser

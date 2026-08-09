@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { KEYBOARD_LAYOUT } from "./layout";
+import { KEYBOARD_LAYOUT_88 } from "./layout";
 
 // Flash → keyboard illumination. The shader treats each active flash as a
 // point light at (key.x, WHITE_KEY_LENGTH, LIGHT_Z) projecting every black
@@ -89,8 +89,8 @@ export const ACTIVE_SHADOW_GROW = -0.03;
 const { BLACK_KEY_BOUNDS, BLACK_KEY_INDICES } = (() => {
   const flat: number[] = [];
   const idx: number[] = [];
-  for (let i = 0; i < KEYBOARD_LAYOUT.keys.length; i++) {
-    const k = KEYBOARD_LAYOUT.keys[i];
+  for (let i = 0; i < KEYBOARD_LAYOUT_88.keys.length; i++) {
+    const k = KEYBOARD_LAYOUT_88.keys[i];
     if (!k.isBlack) continue;
     idx.push(i);
     flat.push(

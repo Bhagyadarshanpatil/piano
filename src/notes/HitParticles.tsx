@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
-import { useSettingsSlice } from '../store'
+import { useStore, useSettingsSlice } from '../store'
 
 const HIT_PARTICLES_KEYS = [
   'cameraFov',
@@ -37,7 +37,7 @@ const HIT_PARTICLES_KEYS = [
 import { audioEngine } from '../audio/engine'
 import { now } from '../audio/clock'
 import { getResolvedSettings } from '../scene/automatedSettings'
-import { KEYBOARD_LAYOUT, KEY_COUNT, MIDI_MIN, WHITE_KEY_LENGTH, WHITE_KEY_WIDTH } from '../keyboard/layout'
+import { getKeyboardLayout, getKeyboardBounds, WHITE_KEY_LENGTH, WHITE_KEY_WIDTH } from '../keyboard/layout'
 import { sampleCurl, dirFromXY } from './curlNoise'
 import { noteDeathFx } from './noteDeathFx'
 
@@ -344,8 +344,8 @@ export function HitParticles() {
   // export's advance() loop). With zero pins these equal the live
   // settings, so the value written is identical to the old effects'.
 
-  const heldCount = useMemo(() => new Uint8Array(KEY_COUNT), [])
-  const lastVelocity = useMemo(() => new Float32Array(KEY_COUNT), [])
+  const heldCount = useMemo(() => new Uint8Array(128), [])
+  const lastVelocity = useMemo(() => new Float32Array(128), [])
   // Track index of the most recent note-on per key (-1 = no track /
   // live input). Read at emission time to look up the per-track tint
   // — gives the particle plume the same colour as the falling note
@@ -353,19 +353,19 @@ export function HitParticles() {
   // read from here, so a key held across a track switch picks up the
   // new colour cleanly on the next press.
   const lastTrack = useMemo(() => {
-    const a = new Int32Array(KEY_COUNT)
+    const a = new Int32Array(128)
     a.fill(-1)
     return a
   }, [])
-  const emitAccum = useMemo(() => new Float32Array(KEY_COUNT), [])
-  const pendingBurst = useMemo(() => new Uint8Array(KEY_COUNT), [])
+  const emitAccum = useMemo(() => new Float32Array(128), [])
+  const pendingBurst = useMemo(() => new Uint8Array(128), [])
   // Per-key timestamp of the most recent note-on, used to enforce a
   // minimum sustained emission window matching the falling-note
   // `noteMinLength` — staccato notes still spawn particles for as long
   // as the visual bar is on screen, so the key glow, the bar, and the
   // particles all have synchronised durations. -Infinity = no past note.
   const noteOnTime = useMemo(() => {
-    const a = new Float32Array(KEY_COUNT)
+    const a = new Float32Array(128)
     a.fill(-Infinity)
     return a
   }, [])
@@ -393,8 +393,10 @@ export function HitParticles() {
 
   useEffect(() => {
     const off = audioEngine.addKeyListener((ev) => {
-      const idx = ev.midi - MIDI_MIN
-      if (idx < 0 || idx >= KEY_COUNT) return
+      const layout = getKeyboardLayout(useStore.getState().settings.keyboardSize)
+      const { min: midiMin } = getKeyboardBounds(useStore.getState().settings.keyboardSize)
+      const idx = ev.midi - midiMin
+      if (idx < 0 || idx >= layout.keys.length) return
       if (ev.type === 'on') {
         heldCount[idx]++
         lastVelocity[idx] = ev.velocity
@@ -754,7 +756,9 @@ export function HitParticles() {
     }
 
     const emitOne = (keyIdx: number, vel: number, isBurst: boolean) => {
-      const key = KEYBOARD_LAYOUT.keys[keyIdx]
+      const layout = getKeyboardLayout(useStore.getState().settings.keyboardSize)
+      const key = layout.keys[keyIdx]
+      if (!key) return
       const ox = key.x + (Math.random() - 0.5) * EMITTER_WIDTH
       const oy = hitY + (Math.random() - 0.5) * 0.02
       const [tr, tg, tb] = resolveTrackRGB(lastTrack[keyIdx])
@@ -773,7 +777,7 @@ export function HitParticles() {
       )
     }
 
-    for (let i = 0; i < KEY_COUNT; i++) {
+    for (let i = 0; i < 128; i++) {
       while (pendingBurst[i] > 0) {
         pendingBurst[i]--
         emitOne(i, lastVelocity[i], true)

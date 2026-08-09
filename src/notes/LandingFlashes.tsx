@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
-import { useSettingsSlice } from '../store'
+import { useStore, useSettingsSlice } from '../store'
 
 const LANDING_FLASHES_KEYS = [
   'flashBrightness',
@@ -19,7 +19,7 @@ const LANDING_FLASHES_KEYS = [
 import { audioEngine } from '../audio/engine'
 import { now } from '../audio/clock'
 import { getResolvedSettings } from '../scene/automatedSettings'
-import { KEYBOARD_LAYOUT, KEY_COUNT, MIDI_MIN, WHITE_KEY_LENGTH } from '../keyboard/layout'
+import { getKeyboardLayout, getKeyboardBounds, WHITE_KEY_LENGTH } from '../keyboard/layout'
 
 const VERTEX_SHADER = /* glsl */ `
   attribute float instanceIntensity;
@@ -92,14 +92,14 @@ export function LandingFlashes() {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const dummy = useMemo(() => new THREE.Object3D(), [])
 
-  const intensities = useMemo(() => new Float32Array(KEY_COUNT), [])
+  const intensities = useMemo(() => new Float32Array(128), [])
   const intensityAttr = useMemo(() => {
     const a = new THREE.InstancedBufferAttribute(intensities, 1)
     a.setUsage(THREE.DynamicDrawUsage)
     return a
   }, [intensities])
   // Per-key RGB tint, re-uploaded each frame (cheap — 88 × 3 floats).
-  const tints = useMemo(() => new Float32Array(KEY_COUNT * 3), [])
+  const tints = useMemo(() => new Float32Array(128 * 3), [])
   const tintAttr = useMemo(() => {
     const a = new THREE.InstancedBufferAttribute(tints, 3)
     a.setUsage(THREE.DynamicDrawUsage)
@@ -108,15 +108,15 @@ export function LandingFlashes() {
   // Track index of the most recent note-on per key (-1 = no track /
   // live input). Read in the per-frame tint update loop.
   const lastTrack = useMemo(() => {
-    const a = new Int32Array(KEY_COUNT)
+    const a = new Int32Array(128)
     a.fill(-1)
     return a
   }, [])
-  const heldCount = useMemo(() => new Uint8Array(KEY_COUNT), [])
-  const sustainLevels = useMemo(() => new Float32Array(KEY_COUNT), [])
+  const heldCount = useMemo(() => new Uint8Array(128), [])
+  const sustainLevels = useMemo(() => new Float32Array(128), [])
   // Earliest wall-clock time at which a key can fade to off. Bumped on every
   // note-on so very short notes still show for at least MIN_HOLD_SECONDS.
-  const heldUntil = useMemo(() => new Float32Array(KEY_COUNT), [])
+  const heldUntil = useMemo(() => new Float32Array(128), [])
 
   const material = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -153,8 +153,10 @@ export function LandingFlashes() {
   // AND the minimum-hold window has elapsed (no fade-out).
   useEffect(() => {
     const off = audioEngine.addKeyListener((ev) => {
-      const idx = ev.midi - MIDI_MIN
-      if (idx < 0 || idx >= KEY_COUNT) return
+      const layout = getKeyboardLayout(useStore.getState().settings.keyboardSize)
+      const { min: midiMin } = getKeyboardBounds(useStore.getState().settings.keyboardSize)
+      const idx = ev.midi - midiMin
+      if (idx < 0 || idx >= layout.keys.length) return
       if (ev.type === 'on') {
         heldCount[idx]++
         // Pin-resolved flashIntensity at the instant of note-on so the
@@ -185,7 +187,7 @@ export function LandingFlashes() {
     if (!mesh) return
     mesh.geometry.setAttribute('instanceIntensity', intensityAttr)
     mesh.geometry.setAttribute('instanceTint', tintAttr)
-    mesh.count = KEY_COUNT
+    mesh.count = 128
     return () => {
       mesh.geometry.deleteAttribute('instanceIntensity')
       mesh.geometry.deleteAttribute('instanceTint')
@@ -217,16 +219,20 @@ export function LandingFlashes() {
     // Rebuild the per-instance scale matrices only when the resolved
     // flashSize / flashWidth changed. With zero pins these are constant,
     // so this runs exactly once (parity with the old mount-time effect).
+    const keyboardSize = useStore.getState().settings.keyboardSize
+    const layout = getKeyboardLayout(keyboardSize)
+
     const mesh = meshRef.current
     if (
       mesh &&
       (rs.flashSize !== lastFlashSize.current ||
-        rs.flashWidth !== lastFlashWidth.current)
+        rs.flashWidth !== lastFlashWidth.current || mesh.userData.lastKeyboardSize !== keyboardSize)
     ) {
       lastFlashSize.current = rs.flashSize
       lastFlashWidth.current = rs.flashWidth
-      for (let i = 0; i < KEY_COUNT; i++) {
-        const k = KEYBOARD_LAYOUT.keys[i]
+      mesh.userData.lastKeyboardSize = keyboardSize
+      for (let i = 0; i < layout.keys.length; i++) {
+        const k = layout.keys[i]
         const baseScale = k.width * BASE_PLANE_SCALE * rs.flashSize
         const planeWidth = baseScale * rs.flashWidth
         const planeHeight = baseScale
@@ -245,7 +251,7 @@ export function LandingFlashes() {
     }
 
     let dirty = false
-    for (let i = 0; i < KEY_COUNT; i++) {
+    for (let i = 0; i < 128; i++) {
       if (intensities[i] === 0) continue
       // Snap off only when the key has been released AND the minimum hold
       // window has elapsed. Otherwise hold the current intensity steady.
@@ -288,7 +294,7 @@ export function LandingFlashes() {
       return v
     }
     let tintDirty = false
-    for (let i = 0; i < KEY_COUNT; i++) {
+    for (let i = 0; i < 128; i++) {
       if (intensities[i] === 0) continue
       const [r, g, b] = resolveTint(lastTrack[i])
       const o = i * 3
@@ -306,10 +312,10 @@ export function LandingFlashes() {
     <group ref={groupRef} position={[0, settings.keyboardY, 0]}>
       <instancedMesh
         ref={meshRef}
-        args={[undefined, undefined, KEY_COUNT]}
+        args={[undefined, undefined, 128]}
         frustumCulled={false}
         material={material}
-        count={KEY_COUNT}
+        count={128}
         // These effects are all transparent + depthWrite:false, so paint
         // order is renderOrder then camera-distance. The flash mesh's
         // object origin is z≈0 (z is baked per-instance at 0.105), so the

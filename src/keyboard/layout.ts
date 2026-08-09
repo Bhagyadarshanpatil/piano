@@ -7,9 +7,15 @@
 //   x = lateral position
 //   y = position along the keyboard (front=0, back=WHITE_KEY_LENGTH)
 //   z = 0 for white keys (plane). Black keys span [0, BLACK_KEY_THICKNESS].
-export const MIDI_MIN = 21
-export const MIDI_MAX = 108
-export const KEY_COUNT = MIDI_MAX - MIDI_MIN + 1 // 88
+export function getKeyboardBounds(size: number) {
+  switch (size) {
+    case 36: return { min: 48, max: 83 } // C3..B5
+    case 44: return { min: 41, max: 84 } // F2..C6
+    case 61: return { min: 36, max: 96 } // C2..C7
+    case 88:
+    default: return { min: 21, max: 108 } // A0..C8
+  }
+}
 
 // Proportions follow a real grand piano (mid-spec) at 1mm = 0.01 world units:
 //   white key 23.5 × 147.5 mm
@@ -44,13 +50,16 @@ export type KeyInfo = {
   thickness: number
 }
 
-function buildLayout(): { keys: KeyInfo[]; totalWidth: number; whiteCount: number } {
+function buildLayout(size: number): { keys: KeyInfo[]; totalWidth: number; whiteCount: number } {
+  const { min: midiMin, max: midiMax } = getKeyboardBounds(size)
+  const keyCount = midiMax - midiMin + 1
+
   const keys: KeyInfo[] = []
   let whiteIdx = 0
-  const whiteIndices: number[] = new Array(KEY_COUNT).fill(0)
-  const isBlackArr: boolean[] = new Array(KEY_COUNT).fill(false)
-  for (let i = 0; i < KEY_COUNT; i++) {
-    const midi = MIDI_MIN + i
+  const whiteIndices: number[] = new Array(keyCount).fill(0)
+  const isBlackArr: boolean[] = new Array(keyCount).fill(false)
+  for (let i = 0; i < keyCount; i++) {
+    const midi = midiMin + i
     const black = isBlackKey(midi)
     isBlackArr[i] = black
     if (!black) {
@@ -64,8 +73,8 @@ function buildLayout(): { keys: KeyInfo[]; totalWidth: number; whiteCount: numbe
   const totalWidth = whiteCount * WHITE_KEY_WIDTH
   const xOffset = -totalWidth / 2 + WHITE_KEY_WIDTH / 2
 
-  for (let i = 0; i < KEY_COUNT; i++) {
-    const midi = MIDI_MIN + i
+  for (let i = 0; i < keyCount; i++) {
+    const midi = midiMin + i
     const black = isBlackArr[i]
     const wi = whiteIndices[i]
     const xWhite = xOffset + wi * WHITE_KEY_WIDTH
@@ -93,12 +102,21 @@ function buildLayout(): { keys: KeyInfo[]; totalWidth: number; whiteCount: numbe
   return { keys, totalWidth, whiteCount }
 }
 
-export const KEYBOARD_LAYOUT = buildLayout()
+const layoutCache = new Map<number, ReturnType<typeof buildLayout>>()
 
-export function keyForMidi(midi: number): KeyInfo | null {
-  const idx = midi - MIDI_MIN
-  if (idx < 0 || idx >= KEY_COUNT) return null
-  return KEYBOARD_LAYOUT.keys[idx]
+export function getKeyboardLayout(size: number) {
+  if (!layoutCache.has(size)) {
+    layoutCache.set(size, buildLayout(size))
+  }
+  return layoutCache.get(size)!
+}
+
+export function keyForMidi(midi: number, size: number): KeyInfo | null {
+  const layout = getKeyboardLayout(size)
+  const { min } = getKeyboardBounds(size)
+  const idx = midi - min
+  if (idx < 0 || idx >= layout.keys.length) return null
+  return layout.keys[idx]
 }
 
 /**
@@ -107,14 +125,14 @@ export function keyForMidi(midi: number): KeyInfo | null {
  * shadow shader: the white surface only needs to project its immediate
  * neighbours, never every black key on the keyboard.
  */
-export function adjacentBlackKeys(midi: number): {
+export function adjacentBlackKeys(midi: number, size: number): {
   left: KeyInfo | null
   right: KeyInfo | null
 } {
-  const k = keyForMidi(midi)
+  const k = keyForMidi(midi, size)
   if (!k || k.isBlack) return { left: null, right: null }
-  const candidateLeft = keyForMidi(midi - 1)
-  const candidateRight = keyForMidi(midi + 1)
+  const candidateLeft = keyForMidi(midi - 1, size)
+  const candidateRight = keyForMidi(midi + 1, size)
   return {
     left: candidateLeft && candidateLeft.isBlack ? candidateLeft : null,
     right: candidateRight && candidateRight.isBlack ? candidateRight : null,
@@ -125,3 +143,6 @@ export function adjacentBlackKeys(midi: number): {
 export function noteHitYWorld(keyboardYWorld: number): number {
   return keyboardYWorld + WHITE_KEY_LENGTH
 }
+
+// Fixed 88-key layout used by whiteKeyShader to precompute the maximum possible black key shadows
+export const KEYBOARD_LAYOUT_88 = getKeyboardLayout(88)

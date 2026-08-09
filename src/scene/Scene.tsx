@@ -39,7 +39,7 @@ import { FallingNotes } from '../notes/FallingNotes'
 import { LandingFlashes } from '../notes/LandingFlashes'
 import { HitParticles } from '../notes/HitParticles'
 import { HitLine } from '../notes/HitLine'
-import { WHITE_KEY_LENGTH, KEYBOARD_LAYOUT } from '../keyboard/layout'
+import { WHITE_KEY_LENGTH, getKeyboardLayout } from '../keyboard/layout'
 import { audioEngine } from '../audio/engine'
 import { pauseSong, playSong, togglePlayback } from '../audio/playback'
 import { EditTools } from './EditTools'
@@ -249,7 +249,8 @@ function KeyboardFrontRail() {
   // Extend laterally under the cheekblocks so the rail and back
   // panel span the same overall x range as the rest of the case
   // (edges align with the outer faces of the cheeks).
-  const width = KEYBOARD_LAYOUT.totalWidth + 2 * CHEEK_WIDTH
+  const layout = getKeyboardLayout(useStore((st) => st.settings.keyboardSize))
+  const width = layout.totalWidth + 2 * CHEEK_WIDTH
   const centerZ = FRONT_RAIL_FRONT_Z - FRONT_RAIL_DEPTH / 2
 
   // Back panel: only as wide as the keyboard. The cheeks already
@@ -257,7 +258,7 @@ function KeyboardFrontRail() {
   // back panel under them would let it poke out behind the cheeks'
   // rounded corners (where the cheek silhouette inset reveals what
   // sits in z behind it).
-  const backWidth = KEYBOARD_LAYOUT.totalWidth
+  const backWidth = layout.totalWidth
 
   // Visible front rail strip — sits BELOW the keyboard with a gap of
   // `CHEEK_FRONT_OVERHANG` between its top edge and the white-key
@@ -338,7 +339,8 @@ function KeyboardCheekBlocks() {
   const backY = keyboardY + WHITE_KEY_LENGTH
   const length = backY - frontY
   const centerY = (frontY + backY) / 2
-  const halfKb = KEYBOARD_LAYOUT.totalWidth / 2
+  const layout = getKeyboardLayout(useStore((st) => st.settings.keyboardSize))
+  const halfKb = layout.totalWidth / 2
   const leftX = -halfKb - CHEEK_WIDTH / 2
   const rightX = +halfKb + CHEEK_WIDTH / 2
   const noRaycast = useMemo(() => () => null, [])
@@ -540,18 +542,23 @@ function CameraSync({
   fov: number
 }) {
   const { camera } = useThree()
+  const keyboardSize = useStore((st) => st.settings.keyboardSize)
+  const defaultLayout = useMemo(() => getKeyboardLayout(88), [])
+  const layout = useMemo(() => getKeyboardLayout(keyboardSize), [keyboardSize])
+  const zoomFactor = layout.totalWidth / defaultLayout.totalWidth
+
   // Non-pin (or zero-pin) path: apply on prop change so a slider drag
   // updates the camera immediately even while paused. With pins this
   // sets the base framing; the per-frame block below then overrides
   // with the resolved (interpolated) values.
   useEffect(() => {
-    camera.position.set(...pos)
+    camera.position.set(pos[0], pos[1] * zoomFactor, pos[2] * zoomFactor)
     if ('fov' in camera) {
       ;(camera as THREE.PerspectiveCamera).fov = fov
       ;(camera as THREE.PerspectiveCamera).updateProjectionMatrix()
     }
     camera.lookAt(...lookAt)
-  }, [camera, pos, lookAt, fov])
+  }, [camera, pos, lookAt, fov, zoomFactor])
   // Follow the pin-resolved camera every frame. With zero pins the
   // resolved values equal the props, so position/fov writes are
   // idempotent and this collapses to the original "re-aim lookAt each
@@ -588,7 +595,7 @@ function CameraSync({
     }
     const [px, py, pz] = cp
     const [lx, ly, lz] = cl
-    camera.position.set(px, py, pz)
+    camera.position.set(px, py * zoomFactor, pz * zoomFactor)
     if ('fov' in camera) {
       const persp = camera as THREE.PerspectiveCamera
       if (persp.fov !== cf || prevFov.current !== cf) {

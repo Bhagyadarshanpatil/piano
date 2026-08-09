@@ -29,9 +29,8 @@ import {
 } from '../notes/positions'
 import { noteDeathFx } from '../notes/noteDeathFx'
 import {
-  KEYBOARD_LAYOUT,
-  KEY_COUNT,
-  MIDI_MIN,
+  getKeyboardLayout,
+  getKeyboardBounds,
   WHITE_KEY_LENGTH,
   noteHitYWorld,
 } from '../keyboard/layout'
@@ -363,15 +362,17 @@ export function EditTools() {
 
     const tl = audioEngine.currentSongTime()
     const time = clickYToTime(startWorld.y, tl, settings, timeCtx)
-    const midi = clickXToMidi(startWorld.x, settings.transpose)
+    const midi = clickXToMidi(startWorld.x, settings.transpose, settings)
 
     // Validate the displayed midi maps to a valid keyboard key BEFORE
     // committing any state changes. Previously this check happened
     // after pushUndoSnapshot + addNote, leaving the store in a
     // half-committed state with no drag listeners attached.
     const anchorDisplayedMidi = midi + settings.transpose
-    const anchorIdx = anchorDisplayedMidi - MIDI_MIN
-    if (anchorIdx < 0 || anchorIdx >= KEY_COUNT) return
+    const layout = getKeyboardLayout(useStore.getState().settings.keyboardSize)
+    const { min: midiMin } = getKeyboardBounds(useStore.getState().settings.keyboardSize)
+    const anchorIdx = anchorDisplayedMidi - midiMin
+    if (anchorIdx < 0 || anchorIdx >= layout.keys.length) return
 
     // Bootstrap an empty song on first add when nothing is loaded so
     // the user can compose from scratch. setSong wipes editHistory, so
@@ -412,7 +413,7 @@ export function EditTools() {
     // (id) across the gesture even as its time/midi shift.
     const noteId = result.id
     const snapshot = result.song
-    const anchorOriginalDisplayedX = parallaxX(KEYBOARD_LAYOUT.keys[anchorIdx].x)
+    const anchorOriginalDisplayedX = parallaxX(layout.keys[anchorIdx].x)
 
     let lastDeltaSemis = 0
     let started = false
@@ -437,7 +438,7 @@ export function EditTools() {
       const dirSign = live.fallDirection === 'down' ? 1 : -1
       const deltaTime = dirSign * (dy / fd) * live.fallDurationSec
 
-      const newAnchorMidi = clickXToMidi(anchorOriginalDisplayedX + dx, 0)
+      const newAnchorMidi = clickXToMidi(anchorOriginalDisplayedX + dx, 0, live)
       const deltaSemis = newAnchorMidi - anchorDisplayedMidi
 
       if (deltaSemis !== lastDeltaSemis) {

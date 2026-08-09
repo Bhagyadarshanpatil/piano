@@ -759,8 +759,8 @@ function flattenCapFrontNormals(
 // Cache by neighbor configuration — only 4 unique cap shapes across all
 // 52 white keys.
 const WHITE_GEOM_CACHE = new Map<string, THREE.BufferGeometry>();
-export function whiteKeyGeometryFor(midi: number): THREE.BufferGeometry {
-  const { left, right } = adjacentBlackKeys(midi);
+export function whiteKeyGeometryFor(midi: number, size: number): THREE.BufferGeometry {
+  const { left, right } = adjacentBlackKeys(midi, size);
   const key = `${left ? "L" : "_"}${right ? "R" : "_"}`;
   let g = WHITE_GEOM_CACHE.get(key);
   if (!g) {
@@ -910,8 +910,8 @@ function tagWhiteBodyFrontFace(
 }
 
 const WHITE_BODY_GEOM_CACHE = new Map<string, THREE.BufferGeometry>();
-export function whiteBodyGeometryFor(midi: number): THREE.BufferGeometry {
-  const { left, right } = adjacentBlackKeys(midi);
+export function whiteBodyGeometryFor(midi: number, size: number): THREE.BufferGeometry {
+  const { left, right } = adjacentBlackKeys(midi, size);
   const key = `${left ? "L" : "_"}${right ? "R" : "_"}`;
   let g = WHITE_BODY_GEOM_CACHE.get(key);
   if (!g) {

@@ -7,7 +7,7 @@ import { computeLiveVisibleTop } from '../scene/visibleTop'
 import { getResolvedSettings } from '../scene/automatedSettings'
 import { audioEngine } from '../audio/engine'
 import { now } from '../audio/clock'
-import { KEYBOARD_LAYOUT, MIDI_MIN, KEY_COUNT, noteHitYWorld } from '../keyboard/layout'
+import { getKeyboardLayout, getKeyboardBounds, noteHitYWorld } from '../keyboard/layout'
 import { useCustomTexture } from './customTexture'
 import { deleteNotes, moveNotes, splitNote } from '../midi/edit'
 import { ensureSamplerLoaded, previewNote } from '../audio/preview'
@@ -460,6 +460,7 @@ PLACEHOLDER_TEXTURE.needsUpdate = true
 // component — and therefore doesn't trigger Three.js / R3F
 // reconciliation on the instanced mesh.
 const FALLING_NOTES_KEYS = [
+  'keyboardSize',
   'cameraFov',
   'cameraLookAt',
   'cameraPos',
@@ -787,6 +788,9 @@ export function FallingNotes() {
     // doesn't pay a Map lookup cost per song note (could be thousands).
     const selection = useStore.getState().selection
     const noteIds = instanceToNoteId.current
+    
+    const layout = getKeyboardLayout(settings.keyboardSize)
+    const { min: midiMin, max: midiMax } = getKeyboardBounds(settings.keyboardSize)
 
     // Per-track tint cache, populated on demand. The cache resets every
     // frame so changes to `noteColor` / `trackColors` apply immediately.
@@ -879,9 +883,9 @@ export function FallingNotes() {
       const length = topY - bottomY
       const centerY = (topY + bottomY) / 2
 
-      const idx = (n.midi + transpose) - MIDI_MIN
-      if (idx < 0 || idx >= KEY_COUNT) continue
-      const key = KEYBOARD_LAYOUT.keys[idx]
+      const idx = n.midi + transpose - midiMin
+      if (idx < 0 || idx >= layout.keys.length) continue
+      const key = layout.keys[idx]
       const width = key.width * widthScale
 
       dummy.position.set(key.x, centerY, noteZ)
@@ -939,9 +943,11 @@ export function FallingNotes() {
         const length = topY - bottomY
         const centerY = (topY + bottomY) / 2
 
-        const idx = ln.midi - MIDI_MIN
-        if (idx < 0 || idx >= KEY_COUNT) continue
-        const key = KEYBOARD_LAYOUT.keys[idx]
+        const layout = getKeyboardLayout(useStore.getState().settings.keyboardSize)
+        const { min: midiMin } = getKeyboardBounds(useStore.getState().settings.keyboardSize)
+        const idx = ln.midi - midiMin
+        if (idx < 0 || idx >= layout.keys.length) continue
+        const key = layout.keys[idx]
         const width = key.width * widthScale
 
         dummy.position.set(key.x, centerY, noteZ)
@@ -1098,13 +1104,15 @@ export function FallingNotes() {
     // selection's relative shape is preserved.
     const ids = new Set<number>(state.selection)
     if (!ids.has(anchorNoteId)) ids.add(anchorNoteId)
-    const anchorIdx = anchor.midi + state.settings.transpose - MIDI_MIN
-    if (anchorIdx < 0 || anchorIdx >= KEY_COUNT) return
+    const layout = getKeyboardLayout(state.settings.keyboardSize)
+    const { min: midiMin } = getKeyboardBounds(state.settings.keyboardSize)
+    const anchorIdx = anchor.midi + state.settings.transpose - midiMin
+    if (anchorIdx < 0 || anchorIdx >= layout.keys.length) return
     dragRef.current = {
       snapshot: state.song,
       ids,
       anchorMidi: anchor.midi + state.settings.transpose,
-      anchorOriginalDisplayedX: parallaxX(KEYBOARD_LAYOUT.keys[anchorIdx].x),
+      anchorOriginalDisplayedX: parallaxX(getKeyboardLayout(state.settings.keyboardSize).keys[anchorIdx].x),
       startWorld,
       startClient,
       moved: false,
@@ -1142,7 +1150,7 @@ export function FallingNotes() {
       // X → semitones. Compute via the anchor's snapped position so the
       // black/white key X spacing is honoured naturally — clickXToMidi
       // already finds the nearest key by absolute X distance.
-      const newAnchorDisplayedMidi = clickXToMidi(drag.anchorOriginalDisplayedX + dx, 0)
+      const newAnchorDisplayedMidi = clickXToMidi(drag.anchorOriginalDisplayedX + dx, 0, settings)
       const deltaSemis = newAnchorDisplayedMidi - drag.anchorMidi
 
       if (!drag.pushedHistory) {

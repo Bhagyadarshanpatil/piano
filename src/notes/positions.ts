@@ -1,7 +1,7 @@
 import type { NoteEvent } from '../midi/types'
 import { defaultSettings, type Settings } from '../store'
 import { midiToTimeline, timelineToMidi, type SpeedMap } from '../midi/speedMap'
-import { KEYBOARD_LAYOUT, KEY_COUNT, MIDI_MIN, noteHitYWorld } from '../keyboard/layout'
+import { getKeyboardLayout, getKeyboardBounds, noteHitYWorld } from '../keyboard/layout'
 
 // Falling notes render on the z = NOTE_PLANE_Z plane so they sit in front
 // of the 3D key caps (white at z=0, black tops at z=0.09) instead of
@@ -117,14 +117,14 @@ export function clickYToTime(
  * absolute X distance — black keys are narrower so the threshold naturally
  * favors them when the click is near their center.
  */
-export function clickXToMidi(x: number, transpose: number): number {
-  // `x` is sampled on the falling-note plane (where the user clicks the
-  // visible note), so it lives in the parallax-compensated space — match
-  // it against the keys' compensated centres, not their raw layout x.
-  let bestMidi = MIDI_MIN
+export function clickXToMidi(x: number, transpose: number, settings: Settings): number {
+  const size = settings.keyboardSize
+  const layout = getKeyboardLayout(size)
+  const { min } = getKeyboardBounds(size)
+  let bestMidi = min
   let bestDist = Infinity
-  for (let i = 0; i < KEY_COUNT; i++) {
-    const k = KEYBOARD_LAYOUT.keys[i]
+  for (let i = 0; i < layout.keys.length; i++) {
+    const k = layout.keys[i]
     const d = Math.abs(parallaxX(k.x) - x)
     if (d < bestDist) {
       bestDist = d
@@ -159,10 +159,13 @@ export function timeToHeadY(
  * World X for a given displayed midi (i.e. `note.midi + transpose`). Returns
  * null when the midi is outside the keyboard so callers can skip drawing.
  */
-export function midiToX(displayedMidi: number): number | null {
-  const idx = displayedMidi - MIDI_MIN
-  if (idx < 0 || idx >= KEY_COUNT) return null
-  return parallaxX(KEYBOARD_LAYOUT.keys[idx].x)
+export function midiToX(displayedMidi: number, settings: Settings): number | null {
+  const size = settings.keyboardSize
+  const layout = getKeyboardLayout(size)
+  const { min } = getKeyboardBounds(size)
+  const idx = displayedMidi - min
+  if (idx < 0 || idx >= layout.keys.length) return null
+  return parallaxX(layout.keys[idx].x)
 }
 
 /**
@@ -183,9 +186,12 @@ export function noteVisualBounds(
   settings: Settings,
   ctx: TimeContext,
 ): { xMin: number; xMax: number; yMin: number; yMax: number } | null {
-  const idx = note.midi + settings.transpose - MIDI_MIN
-  if (idx < 0 || idx >= KEY_COUNT) return null
-  const key = KEYBOARD_LAYOUT.keys[idx]
+  const size = settings.keyboardSize
+  const layout = getKeyboardLayout(size)
+  const { min } = getKeyboardBounds(size)
+  const idx = note.midi + settings.transpose - min
+  if (idx < 0 || idx >= layout.keys.length) return null
+  const key = layout.keys[idx]
   const width = key.width * settings.noteWidthScale
   const halfWidth = width / 2
 

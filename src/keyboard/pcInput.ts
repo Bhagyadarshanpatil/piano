@@ -52,8 +52,6 @@ export function usePcKeyboardInput(ensureAudio: () => Promise<boolean>) {
       const transpose = useStore.getState().settings.transpose;
       const midi = baseMidi + transpose;
       if (midi < 0 || midi > 127) return;
-      // Difficulty gate: if a restricted set is active, block keys not in it.
-      if (allowedMidiNotes !== null && !allowedMidiNotes.has(baseMidi)) return;
       markLivePlay("pc_keyboard");
 
       if (Tone.getContext().state !== "running") {

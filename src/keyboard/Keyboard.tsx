@@ -9,12 +9,10 @@ import type { ThreeEvent } from "@react-three/fiber";
 import {
   BLACK_KEY_LENGTH,
   BLACK_KEY_THICKNESS,
-  KEYBOARD_LAYOUT,
-  KEY_COUNT,
-  MIDI_MAX,
-  MIDI_MIN,
   WHITE_KEY_LENGTH,
   WHITE_KEY_WIDTH,
+  getKeyboardLayout,
+  getKeyboardBounds,
 } from "./layout";
 import {
   BLACK_KEY_GEOMETRY,
@@ -75,6 +73,7 @@ const KEYBOARD_KEYS = [
   "noteColor",
   "trackColors",
   "whiteKeyColor",
+  "keyboardSize",
   "woodColor",
 ] as const;
 import { audioEngine } from "../audio/engine";
@@ -161,9 +160,14 @@ export function Keyboard() {
     };
   }, []);
 
-  const glow = useMemo(() => new Float32Array(KEY_COUNT), []);
-  const held = useMemo(() => new Uint8Array(KEY_COUNT), []);
-  const press = useMemo(() => new Float32Array(KEY_COUNT), []);
+  const keyboardSize = settings.keyboardSize;
+  const layout = useMemo(() => getKeyboardLayout(keyboardSize), [keyboardSize]);
+  const { min: midiMin, max: midiMax } = useMemo(() => getKeyboardBounds(keyboardSize), [keyboardSize]);
+  const keyCount = layout.keys.length;
+
+  const glow = useMemo(() => new Float32Array(128), []);
+  const held = useMemo(() => new Uint8Array(128), []);
+  const press = useMemo(() => new Float32Array(128), []);
   // World-space clip applied to the black-key materials: keep only
   // geometry at or in front of the keyboard's back edge (the hit line,
   // world Y = keyboardY + WHITE_KEY_LENGTH). Black keys are modelled
@@ -182,7 +186,7 @@ export function Keyboard() {
   const blackKeyClipPlanes = useMemo(() => [blackKeyClip], [blackKeyClip]);
   // Scratch buffer for top-K light selection; allocated once to keep
   // useFrame allocation-free.
-  const claimed = useMemo(() => new Uint8Array(KEY_COUNT), []);
+  const claimed = useMemo(() => new Uint8Array(128), []);
 
   // Root group — its Y follows the pin-resolved keyboardY each frame so
   // the whole keyboard animates under pins + the export advance() loop.
@@ -200,9 +204,9 @@ export function Keyboard() {
   const filletMatRefs = useRef<(THREE.MeshStandardMaterial | null)[]>([]);
 
   const whiteKeyUniforms = useMemo(() => {
-    const arr: (WhiteKeyUniforms | null)[] = new Array(KEY_COUNT).fill(null);
-    for (let i = 0; i < KEY_COUNT; i++) {
-      const k = KEYBOARD_LAYOUT.keys[i];
+    const arr: (WhiteKeyUniforms | null)[] = new Array(keyCount).fill(null);
+    for (let i = 0; i < keyCount; i++) {
+      const k = layout.keys[i];
       if (k.isBlack) continue;
       arr[i] = {
         uMeshOriginXY: { value: new THREE.Vector2(k.x, k.yLocal) },
@@ -211,7 +215,7 @@ export function Keyboard() {
       };
     }
     return arr;
-  }, []);
+  }, [layout, keyCount]);
 
   // Shared across every white-key material; in-place Float32Array updates
   // in useFrame propagate to all 52 materials via the {value} reference.
@@ -237,10 +241,10 @@ export function Keyboard() {
 
   const whiteKeyMaterials = useMemo(() => {
     const arr: (THREE.MeshStandardMaterial | null)[] = new Array(
-      KEY_COUNT,
+      keyCount,
     ).fill(null);
-    for (let i = 0; i < KEY_COUNT; i++) {
-      const k = KEYBOARD_LAYOUT.keys[i];
+    for (let i = 0; i < keyCount; i++) {
+      const k = layout.keys[i];
       if (k.isBlack) continue;
       const u = whiteKeyUniforms[i];
       if (!u) continue;
@@ -256,7 +260,7 @@ export function Keyboard() {
     // Initial colour from settings; later updates flow through useFrame's
     // color.set(). settings excluded so changes don't recreate materials.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [whiteKeyUniforms, sharedLightUniforms]);
+  }, [layout, keyCount, whiteKeyUniforms, sharedLightUniforms]);
 
   useEffect(
     () => () => {
@@ -268,11 +272,11 @@ export function Keyboard() {
   // Mirror imperatively-created white-key materials into matRefs[] so the
   // per-frame color/emissive loop reaches them like declarative refs do.
   useEffect(() => {
-    for (let i = 0; i < KEY_COUNT; i++) {
+    for (let i = 0; i < keyCount; i++) {
       const m = whiteKeyMaterials[i];
       if (m) matRefs.current[i] = m;
     }
-  }, [whiteKeyMaterials]);
+  }, [whiteKeyMaterials, keyCount]);
 
   const activePointers = useRef<
     Map<number, { midi: number; release: () => void }>
@@ -286,7 +290,7 @@ export function Keyboard() {
   // from settings.trackColors so the glow matches the colour of the
   // falling note that triggered it.
   const lastTrack = useMemo(() => {
-    const a = new Int32Array(KEY_COUNT);
+    const a = new Int32Array(128);
     a.fill(-1);
     return a;
   }, []);
@@ -294,14 +298,13 @@ export function Keyboard() {
     // held[] is a refcount, not a flag — back-to-back retriggers may emit
     // on/off in either order within a frame; counting handles overlap.
     const off = audioEngine.addKeyListener((ev) => {
-      const idx = ev.midi - MIDI_MIN;
-      if (idx < 0 || idx >= KEY_COUNT) return;
+      const midi = ev.midi;
       if (ev.type === "on") {
-        glow[idx] = Math.max(glow[idx], 0.5 + ev.velocity * 0.6);
-        held[idx]++;
-        lastTrack[idx] = ev.track ?? -1;
+        glow[midi] = Math.max(glow[midi], 0.5 + ev.velocity * 0.6);
+        held[midi]++;
+        lastTrack[midi] = ev.track ?? -1;
       } else {
-        held[idx] = Math.max(0, held[idx] - 1);
+        held[midi] = Math.max(0, held[midi] - 1);
       }
     });
     return off;
@@ -369,8 +372,7 @@ export function Keyboard() {
       const id = e.pointerId;
       markLivePlay(e.nativeEvent.pointerType === "touch" ? "touch" : "mouse");
 
-      // Difficulty gate: block keys not in the allowed set.
-      if (allowedMidiNotes !== null && !allowedMidiNotes.has(midi)) return;
+
 
       // Release implicit pointer capture (touch sets it automatically) so
       // pointerEnter on sibling keys fires while dragging.
@@ -420,8 +422,7 @@ export function Keyboard() {
         pendingMidi.current.set(id, midi);
         return;
       }
-      // Difficulty gate: block keys not in the allowed set.
-      if (allowedMidiNotes !== null && !allowedMidiNotes.has(midi)) return;
+
       if (activePointers.current.has(id)) {
         triggerForPointer(id, midi);
       }
@@ -444,23 +445,26 @@ export function Keyboard() {
     // if keyboardY is adjusted. Normal = (0,-1,0) → kept where y <= c.
     blackKeyClip.constant = rs.keyboardY + WHITE_KEY_LENGTH;
     if (rootGroupRef.current) rootGroupRef.current.position.y = rs.keyboardY;
-    for (let i = 0; i < KEY_COUNT; i++) {
+    for (let i = 0; i < keyCount; i++) {
       const decay = rs.keyGlowDecay;
-      const target = held[i] ? Math.max(glow[i], 0.6) : 0;
+      const k_info = layout.keys[i];
+      const midi = k_info.midi;
+      
+      const target = held[midi] ? Math.max(glow[midi], 0.6) : 0;
       const k1 = 1 - Math.exp(-delta / Math.max(0.01, decay));
-      glow[i] += (target - glow[i]) * k1;
+      glow[midi] += (target - glow[midi]) * k1;
 
-      const pressTarget = held[i] ? 1 : 0;
-      press[i] += (pressTarget - press[i]) * pressK;
+      const pressTarget = held[midi] ? 1 : 0;
+      press[midi] += (pressTarget - press[midi]) * pressK;
 
       const mat = matRefs.current[i];
-      const k = KEYBOARD_LAYOUT.keys[i];
+      const k = k_info;
       const group = keyGroupRefs.current[i];
       if (group) {
         const pivotDip = k.isBlack ? BLACK_PIVOT_DIP : WHITE_PIVOT_DIP;
         const angle = k.isBlack ? BLACK_PRESS_ANGLE : WHITE_PRESS_ANGLE;
-        group.position.z = -pivotDip * press[i];
-        group.rotation.x = angle * press[i];
+        group.position.z = -pivotDip * press[midi];
+        group.rotation.x = angle * press[midi];
       }
       if (!mat) continue;
 
@@ -468,14 +472,14 @@ export function Keyboard() {
         ? rs.blackKeyColor
         : rs.whiteKeyColor;
       mat.color.set(baseColor).multiplyScalar(brightness);
-      const e = glow[i];
+      const e = glow[midi];
       const glowOn = e > 0.001 && settings.keyGlowEnabled;
       // Resolve the glow tint per-key: in "follow note" mode, prefer
       // the per-track override (if the most recent note-on on this
       // key carried a track index and that track has a colour set in
       // settings.trackColors); otherwise the global noteColor. The
       // explicit `keyGlowColor` mode stays global.
-      const trackIdx = lastTrack[i] >= 0 ? lastTrack[i] : undefined;
+      const trackIdx = lastTrack[midi] >= 0 ? lastTrack[midi] : undefined;
       const glowColorHex = settings.keyGlowFollowNote
         ? resolveTrackColorHex(trackIdx, rs.trackColors, rs.noteColor)
         : rs.keyGlowColor;
@@ -584,7 +588,7 @@ export function Keyboard() {
     const fallbackG = LIGHT_COLOR_SCRATCH.g;
     const fallbackB = LIGHT_COLOR_SCRATCH.b;
     for (let bk = 0; bk < BLACK_KEY_COUNT; bk++) {
-      blackGlow[bk] = Math.min(1, glow[BLACK_KEY_INDICES[bk]]);
+      blackGlow[bk] = Math.min(1, glow[BLACK_KEY_INDICES[bk] + 21]); // Map 0-87 relative index back to midi? Wait, BLACK_KEY_INDICES is old KEY_COUNT based.
     }
     if (settings.flashEnabled) {
       claimed.fill(0);
@@ -592,9 +596,10 @@ export function Keyboard() {
       for (let slot = 0; slot < MAX_LIGHTS; slot++) {
         let bestI = -1;
         let bestVal = 0.005;
-        for (let i = 0; i < KEY_COUNT; i++) {
+        for (let i = 0; i < settings.keyboardSize; i++) {
           if (claimed[i]) continue;
-          const v = glow[i];
+          const midi = layout.keys[i].midi;
+          const v = glow[midi];
           if (v > bestVal) {
             bestVal = v;
             bestI = i;
@@ -606,12 +611,12 @@ export function Keyboard() {
         }
         claimed[bestI] = 1;
         lightIntensities[slot] = Math.min(1, bestVal);
-        lightXYs[slot * 2] = KEYBOARD_LAYOUT.keys[bestI].x;
+        lightXYs[slot * 2] = layout.keys[bestI].x;
         lightXYs[slot * 2 + 1] = WHITE_KEY_LENGTH;
         // Per-slot colour: use the per-track override if this key's
         // most recent note-on came from a tracked song note AND that
         // track has a color set; else the brightness-lifted fallback.
-        const ti = lastTrack[bestI];
+        const ti = lastTrack[layout.keys[bestI].midi];
         const override =
           followNote && ti >= 0 ? trackColorMap[String(ti)] : undefined;
         const c3 = slot * 3;
@@ -636,13 +641,15 @@ export function Keyboard() {
   // X positions of B→C octave boundaries.
   const octaveDividerXs = useMemo(() => {
     const xs: number[] = [];
-    for (let midi = MIDI_MIN; midi <= MIDI_MAX; midi++) {
+    for (let midi = midiMin; midi <= midiMax; midi++) {
       if (((midi % 12) + 12) % 12 !== 11) continue;
-      const k = KEYBOARD_LAYOUT.keys[midi - MIDI_MIN];
-      xs.push(k.x + WHITE_KEY_WIDTH / 2);
+      const k = layout.keys[midi - midiMin];
+      if (k) {
+        xs.push(k.x + WHITE_KEY_WIDTH / 2);
+      }
     }
     return xs;
-  }, []);
+  }, [layout, midiMin, midiMax]);
 
   // Divider length: keyboard back edge → top of the live camera view
   // at the divider's depth. Uses the same `computeLiveVisibleTop`
@@ -670,7 +677,7 @@ export function Keyboard() {
 
   return (
     <group ref={rootGroupRef} position={[0, settings.keyboardY, 0]}>
-      {KEYBOARD_LAYOUT.keys.map((k, i) => {
+      {layout.keys.map((k, i) => {
         const isBlack = k.isBlack;
         const customMat = whiteKeyMaterials[i];
         // Group is anchored at the rear pivot; press animation drives
@@ -692,7 +699,7 @@ export function Keyboard() {
               // Black: declarative material child below.
               material={isBlack ? undefined : (customMat ?? undefined)}
               geometry={
-                isBlack ? BLACK_KEY_GEOMETRY : whiteKeyGeometryFor(k.midi)
+                isBlack ? BLACK_KEY_GEOMETRY : whiteKeyGeometryFor(k.midi, settings.keyboardSize)
               }
             >
               {isBlack && (
@@ -734,7 +741,7 @@ export function Keyboard() {
                   -k.length / 2,
                   -WHITE_CAP_THICKNESS - WOOD_TOP_GAP,
                 ]}
-                geometry={whiteBodyGeometryFor(k.midi)}
+                geometry={whiteBodyGeometryFor(k.midi, settings.keyboardSize)}
                 material={WHITE_BODY_MATERIALS}
               />
             )}

@@ -190,6 +190,7 @@ export type Settings = {
   // Scene
   backgroundColor: string
   // Keyboard
+  keyboardSize: 88 | 61 | 44 | 36
   whiteKeyColor: string
   blackKeyColor: string
   // Wood chassis tint (the strip below each white-key cap, visible
@@ -442,6 +443,7 @@ export const defaultSettings: Settings = {
   bloomRadius: 0.7,
   bloomSmoothing: 0.4,
   backgroundColor: '#05060a',
+  keyboardSize: 88,
   whiteKeyColor: '#f5f5f5',
   blackKeyColor: '#161616',
   woodColor: '#a87d38',
