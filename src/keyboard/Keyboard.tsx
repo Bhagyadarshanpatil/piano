@@ -48,7 +48,7 @@ import { usePcKeyboardInput } from "./pcInput";
 import { useStore, useSettingsSlice, defaultSettings } from "../store";
 import { computeLiveVisibleTop } from "../scene/visibleTop";
 import { getResolvedSettings } from "../scene/automatedSettings";
-import { allowedMidiNotes } from "../app/ClientApp";
+
 
 const KEYBOARD_KEYS = [
   "blackKeyColor",

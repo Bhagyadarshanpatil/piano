@@ -955,12 +955,13 @@ export const useStore = create<AppState>((set) => ({
     // intuitive. Drop any pending settings baseline for the same reason.
     dropSettingsBaseline()
 
-    if (opts?.resetTimeline) {
-      if (song) {
-        audioEngine.loadSong(song)
-      } else {
-        audioEngine.unloadSong()
-      }
+    // Always sync the audio engine with the new song — regardless of
+    // whether the timeline is being reset. The engine holds its own
+    // note array and will keep playing stale notes if not updated.
+    if (song) {
+      audioEngine.loadSong(song)
+    } else {
+      audioEngine.unloadSong()
     }
     set((state) => {
       // Opening a DIFFERENT MIDI: clear the song-tied timeline-editor

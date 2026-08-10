@@ -6,8 +6,21 @@ import { useStore } from "../store";
 import { audioEngine } from "../audio/engine";
 import { parseMidi } from "../midi/parse";
 import { playSong, pauseSong } from "../audio/playback";
-import { applyDifficulty, getAllowedMidiNotes, type Difficulty } from "../utils/difficulty";
+import { applyDifficulty, type Difficulty } from "../utils/difficulty";
 import type { ParsedSong } from "../midi/types";
+
+function splitMonoTrack(song: ParsedSong): ParsedSong {
+  if (!song.notes.length) return song;
+  const trackIds = new Set(song.notes.map((n) => n.track));
+  if (trackIds.size > 1) return song;
+
+  // Mono-track! Split by pitch: >= C4 (60) is track 1 (Melody), < C4 is track 2 (Bass)
+  const newNotes = song.notes.map((n) => ({
+    ...n,
+    track: n.midi >= 60 ? 1 : 2,
+  }));
+  return { ...song, notes: newNotes };
+}
 
 // ── Module-level ref: set of MIDI pitches the user is allowed to press.
 // null = no restriction (expert mode). Written by ClientApp whenever the
@@ -51,7 +64,11 @@ const SPEED_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
 type LibrarySong = {
   id: string;
   title: string;
-  file_url: string;
+  versions: {
+    easy?: string;
+    medium?: string;
+    expert?: string;
+  };
 };
 
 export default function ClientApp() {
@@ -64,16 +81,34 @@ export default function ClientApp() {
   const [fetchingLibrary, setFetchingLibrary] = useState(false);
   const [librarySongs, setLibrarySongs] = useState<LibrarySong[]>([]);
   const [recentSongs, setRecentSongs] = useState<LibrarySong[]>([]);
+  const [activeLibrarySong, setActiveLibrarySong] = useState<LibrarySong | null>(null);
+  const [chromaSync, setChromaSync] = useState(true);
 
-  // Load recently played on mount
+  // Sync track colors when song, difficulty, or chromaSync changes
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("aether_recent_songs");
-      if (stored) setRecentSongs(JSON.parse(stored));
-    } catch {
-      // ignore
+    if (!originalSong) return;
+    
+    // We want the keyboard glow to follow the note color
+    const update: any = { keyGlowFollowNote: true };
+    
+    if (chromaSync) {
+      const trackIdxs = new Set<number>();
+      for (const n of useStore.getState().song?.notes || []) trackIdxs.add(n.track);
+      
+      const overrides: Record<string, string> = {};
+      // Vibrant neon palette starting with the original cyan
+      const palette = ["#5ad7ff", "#33e680", "#e6991a", "#cc33e6", "#e6334d", "#e6e633"];
+      let cIdx = 0;
+      for (const t of Array.from(trackIdxs).sort((a,b)=>a-b)) {
+        overrides[String(t)] = palette[cIdx % palette.length];
+        cIdx++;
+      }
+      update.trackColors = overrides;
+    } else {
+      update.trackColors = {};
     }
-  }, []);
+    useStore.getState().updateSettings(update);
+  }, [originalSong, difficulty, chromaSync]);
 
   const addRecentSong = useCallback((song: LibrarySong) => {
     setRecentSongs((prev) => {
@@ -88,13 +123,6 @@ export default function ClientApp() {
   const playbackRate = useStore((s) => s.settings.playbackRate);
 
   const isPlaying = transport === "playing";
-
-  // Apply difficulty whenever it or the base song changes
-  useEffect(() => {
-    if (!originalSong) return;
-    const filtered = applyDifficulty(originalSong, difficulty);
-    useStore.getState().setSong(filtered, { resetTimeline: false });
-  }, [difficulty, originalSong]);
 
   // Sync practiceMode → audio engine: mute only auto-scheduled song notes.
   // triggerKey() (user key presses) always stays audible.
@@ -122,30 +150,69 @@ export default function ClientApp() {
     }
   }, []);
 
-  const handleLoadLibrarySong = useCallback(async (songUrl: string, songTitle: string) => {
+  // Load recently played on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("aether_recent_songs");
+      if (stored) setRecentSongs(JSON.parse(stored));
+    } catch {
+      // ignore
+    }
+    // Auto-load library
+    handleFetchLibrary();
+  }, [handleFetchLibrary]);
+
+  const handleLoadLibrarySong = useCallback(async (song: LibrarySong, selectedDiff: Difficulty) => {
     setUploading(true);
     setLoadProgress(null);
     try {
+      audioEngine.stop();
+      useStore.getState().setTransport("stopped");
+      
       if (!audioEngine.isReady()) {
         audioEngine.init((p) => setLoadProgress(p)).catch(console.error);
       }
 
+      // Default to expert if the selected difficulty is missing
+      const songUrl = song.versions[selectedDiff] || song.versions.expert;
+      if (!songUrl) throw new Error("No URL found for song");
+
       const response = await fetch(songUrl);
       const arrayBuffer = await response.arrayBuffer();
-      const parsedSong = await parseMidi(arrayBuffer, songTitle);
+      let parsedSong = await parseMidi(arrayBuffer, song.title);
+      parsedSong = splitMonoTrack(parsedSong);
 
       setOriginalSong(parsedSong);
-      setSongName(songTitle);
+      setSongName(song.title);
+      setActiveLibrarySong(song);
 
-      const filtered = applyDifficulty(parsedSong, difficulty);
+      // Apply difficulty heuristic on library files
+      const filtered = applyDifficulty(parsedSong, selectedDiff);
       useStore.getState().setSong(filtered, { resetTimeline: true });
-      addRecentSong({ id: songUrl, title: songTitle, file_url: songUrl });
+      addRecentSong(song);
     } catch (err) {
       console.error("MIDI parse failed:", err);
     } finally {
       setUploading(false);
     }
-  }, [difficulty, addRecentSong]);
+  }, [addRecentSong]);
+
+  const handleDifficultyChange = useCallback(async (d: Difficulty) => {
+    // Reset playback position
+    audioEngine.stop();
+    useStore.getState().setTransport("stopped");
+
+    setDifficulty(d);
+    
+    if (activeLibrarySong) {
+      // Fetch new file from Supabase
+      await handleLoadLibrarySong(activeLibrarySong, d);
+    } else if (originalSong) {
+      // Local upload, use heuristic
+      const filtered = applyDifficulty(originalSong, d);
+      useStore.getState().setSong(filtered, { resetTimeline: true });
+    }
+  }, [activeLibrarySong, originalSong, handleLoadLibrarySong]);
 
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -157,16 +224,21 @@ export default function ClientApp() {
     setLoadProgress(null);
 
     try {
+      audioEngine.stop();
+      useStore.getState().setTransport("stopped");
+
       // Start audio engine load immediately on user gesture
       if (!audioEngine.isReady()) {
         audioEngine.init((p) => setLoadProgress(p)).catch(console.error);
       }
 
       const arrayBuffer = await file.arrayBuffer();
-      const parsedSong = await parseMidi(arrayBuffer, file.name);
+      let parsedSong = await parseMidi(arrayBuffer, file.name);
+      parsedSong = splitMonoTrack(parsedSong);
 
       setOriginalSong(parsedSong);
       setSongName(file.name.replace(/\.midi?$/i, ""));
+      setActiveLibrarySong(null);
 
       // Load into store (engine.loadSong is called inside setSong)
       const filtered = applyDifficulty(parsedSong, difficulty);
@@ -259,7 +331,7 @@ export default function ClientApp() {
                   {(["easy", "medium", "expert"] as Difficulty[]).map((d) => (
                     <button
                       key={d}
-                      onClick={() => setDifficulty(d)}
+                      onClick={() => handleDifficultyChange(d)}
                       className={`flex-1 py-2 text-xs font-bold rounded-lg capitalize transition-all duration-200 ${difficulty === d ? 'bg-gradient-to-br from-teal-500 to-purple-600 text-white shadow-lg' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                     >
                       {d}
@@ -277,6 +349,16 @@ export default function ClientApp() {
                 <span className="text-lg">{practiceMode ? "🎹" : "🔊"}</span>
                 {practiceMode ? "Practice Mode" : "Auto-Play Mode"}
               </button>
+
+              {/* ColorX toggle */}
+              <button
+                onClick={() => setChromaSync((m) => !m)}
+                title={chromaSync ? "Distinct colors for Melody & Bass" : "ColorX Multi Color Mode"}
+                className={`w-full py-3 px-4 flex items-center justify-center gap-2.5 text-sm font-semibold rounded-xl border transition-all duration-200 ${chromaSync ? 'bg-gradient-to-br from-pink-500/20 to-orange-500/20 border-pink-500/30 text-pink-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-300'}`}
+              >
+                <span className="text-lg">{chromaSync ? "🌈" : "⬜"}</span>
+                {chromaSync ? "ColorX: ON" : "ColorX: OFF"}
+              </button>
             </div>
             
             <div className="mt-auto pt-4 border-t border-white/5">
@@ -288,7 +370,7 @@ export default function ClientApp() {
                   {recentSongs.map((song) => (
                     <button
                       key={song.id}
-                      onClick={() => handleLoadLibrarySong(song.file_url, song.title)}
+                      onClick={() => handleLoadLibrarySong(song, difficulty)}
                       disabled={uploading}
                       className="text-left px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-teal-300 text-sm transition-colors duration-200 truncate"
                     >
@@ -341,16 +423,8 @@ export default function ClientApp() {
               </div>
             </div>
 
-            {/* Browse Library */}
             <div className="flex flex-col gap-3">
               <div className="text-xs text-gray-400 font-semibold tracking-wider uppercase">Supabase Library</div>
-              <button
-                onClick={handleFetchLibrary}
-                disabled={fetchingLibrary || uploading}
-                className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all duration-200 text-sm font-semibold ${fetchingLibrary ? 'bg-white/10 border-white/20 text-white cursor-default' : 'bg-white/5 border-white/10 text-white hover:bg-white/10 cursor-pointer'}`}
-              >
-                <span>{fetchingLibrary ? "Fetching..." : "Browse Library"}</span>
-              </button>
 
               {/* Render Library Songs */}
               {librarySongs.length > 0 && (
@@ -358,7 +432,7 @@ export default function ClientApp() {
                   {librarySongs.map((song) => (
                     <button
                       key={song.id}
-                      onClick={() => handleLoadLibrarySong(song.file_url, song.title)}
+                      onClick={() => handleLoadLibrarySong(song, difficulty)}
                       disabled={uploading}
                       className="text-left px-3 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-teal-300 text-sm transition-colors duration-200 truncate"
                     >

@@ -4,7 +4,7 @@ import * as Tone from "tone";
 import { audioEngine } from "../audio/engine";
 import { markLivePlay } from "../usage";
 import { useStore } from "../store";
-import { allowedMidiNotes } from "../app/ClientApp";
+
 
 // PC keyboard → MIDI mapping. ZXCV/ASDF rows = lower octave (white/sharps),
 // QWERTY/digit rows = upper octave. Some pitches reachable from multiple

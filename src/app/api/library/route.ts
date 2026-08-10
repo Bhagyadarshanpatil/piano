@@ -20,17 +20,46 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Format the response to match the expected LibrarySong type
-    const songs = files
-      .filter((file) => file.name.endsWith('.mid') || file.name.endsWith('.midi'))
-      .map((file) => {
-        const { data } = supabase.storage.from('midi-files').getPublicUrl(file.name);
-        return {
-          id: file.id || file.name,
-          title: file.name.replace(/\.midi?$/, ''),
-          file_url: data.publicUrl,
-        };
-      });
+    const songMap = new Map<string, any>();
+    
+    for (const file of files) {
+      if (!file.name.endsWith('.mid') && !file.name.endsWith('.midi')) continue;
+      
+      const { data } = supabase.storage.from('midi-files').getPublicUrl(file.name);
+      const url = data.publicUrl;
+      
+      let baseName = file.name.replace(/\.midi?$/, '');
+      let difficulty = 'expert';
+      
+      if (baseName.endsWith('_easy')) {
+        baseName = baseName.replace('_easy', '');
+        difficulty = 'easy';
+      } else if (baseName.endsWith('_medium')) {
+        baseName = baseName.replace('_medium', '');
+        difficulty = 'medium';
+      } else if (baseName.endsWith('_expert')) {
+        baseName = baseName.replace('_expert', '');
+        difficulty = 'expert';
+      }
+      
+      if (!songMap.has(baseName)) {
+        // Format title nicely, e.g., "rondo_alla_turca" -> "Rondo Alla Turca"
+        const formattedTitle = baseName
+          .split('_')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+          
+        songMap.set(baseName, {
+          id: baseName,
+          title: formattedTitle,
+          versions: {}
+        });
+      }
+      
+      songMap.get(baseName).versions[difficulty] = url;
+    }
+    
+    const songs = Array.from(songMap.values());
 
     // Return the JSON list of songs
     return NextResponse.json(songs, { status: 200 });
