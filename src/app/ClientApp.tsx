@@ -8,6 +8,7 @@ import { parseMidi } from "../midi/parse";
 import { playSong, pauseSong } from "../audio/playback";
 import { applyDifficulty, type Difficulty } from "../utils/difficulty";
 import type { ParsedSong } from "../midi/types";
+import Link from 'next/link';
 
 function splitMonoTrack(song: ParsedSong): ParsedSong {
   if (!song.notes.length) return song;
@@ -64,11 +65,10 @@ const SPEED_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
 type LibrarySong = {
   id: string;
   title: string;
-  versions: {
-    easy?: string;
-    medium?: string;
-    expert?: string;
-  };
+  artist: string;
+  genre?: string;
+  difficulty_level?: string;
+  file_url: string;
 };
 
 export default function ClientApp() {
@@ -141,8 +141,8 @@ export default function ClientApp() {
       const res = await fetch('/api/library');
       if (!res.ok) throw new Error('Failed to fetch library');
       const data = await res.json();
-      setLibrarySongs(data);
-      console.log('Library loaded:', data);
+      setLibrarySongs(data.tracks || []);
+      console.log('Library loaded:', data.tracks);
     } catch (err) {
       console.error(err);
     } finally {
@@ -162,6 +162,11 @@ export default function ClientApp() {
     handleFetchLibrary();
   }, [handleFetchLibrary]);
 
+  // Eagerly initialize audio engine so piano keys are playable immediately
+  useEffect(() => {
+    audioEngine.init().catch(console.error);
+  }, []);
+
   const handleLoadLibrarySong = useCallback(async (song: LibrarySong, selectedDiff: Difficulty) => {
     setUploading(true);
     setLoadProgress(null);
@@ -173,9 +178,14 @@ export default function ClientApp() {
         audioEngine.init((p) => setLoadProgress(p)).catch(console.error);
       }
 
-      // Default to expert if the selected difficulty is missing
-      const songUrl = song.versions[selectedDiff] || song.versions.expert;
+      // Load the file directly from Supabase storage or via proxy if external
+      let songUrl = song.file_url;
       if (!songUrl) throw new Error("No URL found for song");
+
+      // Bypasses browser CORS for external URLs (like the bitmidi.com links we just inserted)
+      if (songUrl.startsWith('http') && !songUrl.includes('supabase.co')) {
+        songUrl = `/api/proxy-midi?url=${encodeURIComponent(songUrl)}`;
+      }
 
       const response = await fetch(songUrl);
       const arrayBuffer = await response.arrayBuffer();
@@ -387,6 +397,20 @@ export default function ClientApp() {
         <div className={`absolute top-6 right-6 bottom-32 w-[340px] flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${isPlaying ? 'translate-x-[120%]' : 'translate-x-0'}`}>
           <div className="flex-1 rounded-2xl bg-[#0a0a12]/50 backdrop-blur-2xl border border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-6 flex flex-col gap-6 overflow-y-auto">
             
+            {/* Profile Button */}
+            <div>
+              <Link 
+                href="/profile"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-fuchsia-600/20 to-purple-600/20 hover:from-fuchsia-600/40 hover:to-purple-600/40 border border-fuchsia-500/30 rounded-xl text-fuchsia-100 font-semibold transition-all shadow-[0_0_15px_rgba(217,70,239,0.15)]"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                My Profile
+              </Link>
+            </div>
+
             {/* Keyboard Size Settings */}
             <div>
               <div className="text-xs text-gray-400 mb-2 font-semibold tracking-wider uppercase">Keyboard Size</div>
