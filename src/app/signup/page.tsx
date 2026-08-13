@@ -63,16 +63,16 @@ export default function SignupPage() {
   if (success) {
     return (
       <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center p-4">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(52,211,153,0.1)]">
-          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-400/30 mx-auto mb-6">
-            <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-14 max-w-lg w-full text-center shadow-[0_0_50px_rgba(52,211,153,0.1)]">
+          <div className="flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-400/30 mx-auto mb-8">
+            <CheckCircle2 className="w-10 h-10 text-emerald-400" />
           </div>
-          <h2 className="text-2xl font-bold mb-3">Check your inbox!</h2>
-          <p className="text-white/50 text-sm leading-relaxed mb-8">
+          <h2 className="text-3xl font-bold mb-4">Check your inbox!</h2>
+          <p className="text-white/50 text-base leading-relaxed mb-10">
             We sent a confirmation link to <span className="text-white font-medium">{email}</span>. 
             Click it to verify your account and start your journey.
           </p>
-          <Link href="/login" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
+          <Link href="/login" className="text-base text-indigo-400 hover:text-indigo-300 transition-colors">
             Back to Sign In
           </Link>
         </div>
@@ -88,20 +88,21 @@ export default function SignupPage() {
         <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-purple-900/20 rounded-full blur-[120px] mix-blend-screen" />
       </div>
 
-      <Link href="/" className="absolute top-8 left-8 z-20 flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm">
-        <ArrowLeft className="w-4 h-4" /> Back
-      </Link>
+      <main className="relative z-10 w-full max-w-lg mt-8 mb-8">
+        <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-white mb-8 transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-base font-medium">Back to Home</span>
+        </Link>
 
-      <main className="z-10 w-full max-w-md">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-[0_0_50px_rgba(217,70,239,0.1)] relative overflow-hidden">
-          <div className="absolute -top-24 -left-24 w-48 h-48 bg-fuchsia-500/20 blur-[80px] rounded-full pointer-events-none" />
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-12 shadow-2xl relative overflow-hidden">
+          <div className="absolute -top-24 -left-24 w-48 h-48 bg-fuchsia-500/10 blur-[80px] rounded-full pointer-events-none" />
           <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/10 blur-[80px] rounded-full pointer-events-none" />
 
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold tracking-tight mb-2 bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-200 to-purple-200">
+          <div className="text-center mb-10">
+            <h1 className="text-4xl font-bold tracking-tight mb-3 bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-200 to-purple-200">
               Create Account
             </h1>
-            <p className="text-white/50 text-sm">Begin your enchanted musical journey</p>
+            <p className="text-white/50 text-base">Begin your enchanted musical journey</p>
           </div>
 
           {error && (

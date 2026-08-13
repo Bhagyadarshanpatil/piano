@@ -1,34 +1,29 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-let supabase: any = null
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey)
-}
+import { createClient } from '@/utils/supabase/server';
 
 export async function GET(request: Request) {
-  if (!supabase) {
-    return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 })
-  }
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || 'dummy-user';
+    const supabase = await createClient();
+    
+    // Authenticate user securely
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const { data, error } = await supabase
       .from('recently_played')
       .select(`
         id,
         played_at,
-        library (
+        tracks (
           id,
           title,
-          file_url
+          file_url,
+          artist
         )
       `)
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .order('played_at', { ascending: false })
       .limit(10);
 
@@ -37,7 +32,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data, { status: 200 });
+    // Format the data to match the frontend expectations
+    const formattedData = data.map(item => ({
+      id: item.tracks?.id,
+      title: item.tracks?.title,
+      artist: item.tracks?.artist,
+      file_url: item.tracks?.file_url,
+      played_at: item.played_at,
+      history_id: item.id
+    })).filter(item => item.id); // Filter out any null tracks
+
+    return NextResponse.json(formattedData, { status: 200 });
   } catch (error) {
     console.error('API route error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -45,12 +50,17 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!supabase) {
-    return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 })
-  }
   try {
+    const supabase = await createClient();
+    
+    // Authenticate user securely
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
-    const { songId, userId = 'dummy-user' } = body;
+    const { songId } = body;
 
     if (!songId) {
       return NextResponse.json({ error: 'songId is required' }, { status: 400 });
@@ -59,7 +69,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabase
       .from('recently_played')
       .insert([
-        { user_id: userId, song_id: songId, played_at: new Date().toISOString() }
+        { user_id: user.id, song_id: songId }
       ])
       .select();
 

@@ -110,14 +110,37 @@ export default function ClientApp() {
     useStore.getState().updateSettings(update);
   }, [originalSong, difficulty, chromaSync]);
 
-  const addRecentSong = useCallback((song: LibrarySong) => {
+  const fetchRecentlyPlayed = useCallback(async () => {
+    try {
+      const res = await fetch('/api/recently-played');
+      if (res.ok) {
+        const data = await res.json();
+        setRecentSongs(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch recent songs:', err);
+    }
+  }, []);
+
+  const addRecentSong = useCallback(async (song: LibrarySong) => {
+    // Optimistically update UI
     setRecentSongs((prev) => {
       const filtered = prev.filter((s) => s.id !== song.id);
-      const updated = [song, ...filtered].slice(0, 5); // Keep last 5
-      localStorage.setItem("aether_recent_songs", JSON.stringify(updated));
-      return updated;
+      return [song, ...filtered].slice(0, 10);
     });
-  }, []);
+
+    try {
+      await fetch('/api/recently-played', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ songId: song.id })
+      });
+      // Sync with server state
+      fetchRecentlyPlayed();
+    } catch (err) {
+      console.error('Failed to log recent song:', err);
+    }
+  }, [fetchRecentlyPlayed]);
 
   const transport = useStore((s) => s.transport);
   const playbackRate = useStore((s) => s.settings.playbackRate);
@@ -151,17 +174,11 @@ export default function ClientApp() {
     }
   }, []);
 
-  // Load recently played on mount
+  // Load recently played and library on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("aether_recent_songs");
-      if (stored) setRecentSongs(JSON.parse(stored));
-    } catch {
-      // ignore
-    }
-    // Auto-load library
+    fetchRecentlyPlayed();
     handleFetchLibrary();
-  }, [handleFetchLibrary]);
+  }, [handleFetchLibrary, fetchRecentlyPlayed]);
 
   // Eagerly initialize audio engine so piano keys are playable immediately
   useEffect(() => {
@@ -298,14 +315,14 @@ export default function ClientApp() {
                 Aether Keys
               </h1>
               {songName ? (
-                <p className="text-sm text-gray-400 truncate">🎵 {songName}</p>
+                <p className="text-base text-gray-400 truncate">🎵 {songName}</p>
               ) : (
-                <p className="text-sm text-gray-500">Upload a MIDI file to begin</p>
+                <p className="text-base text-gray-500">Upload a MIDI file to begin</p>
               )}
             </div>
 
             {/* Upload Button */}
-            <label className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all duration-200 text-sm font-semibold ${uploading ? 'bg-teal-400/10 border-teal-400/20 text-teal-300 cursor-default' : 'bg-white/5 border-white/10 text-white hover:bg-white/10 cursor-pointer'}`}>
+            <label className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all duration-200 text-base font-semibold ${uploading ? 'bg-teal-400/10 border-teal-400/20 text-teal-300 cursor-default' : 'bg-white/5 border-white/10 text-white hover:bg-white/10 cursor-pointer'}`}>
               <IconUpload />
               <span>{uploading ? "Loading…" : "Upload MIDI"}</span>
               <input
@@ -320,7 +337,7 @@ export default function ClientApp() {
             {/* Sample load progress bar */}
             {loadProgress && loadProgress.total > 0 && loadProgress.loaded < loadProgress.total && (
               <div>
-                <div className="text-xs text-gray-400 mb-1.5 font-medium">
+                <div className="text-sm text-gray-400 mb-1.5 font-medium">
                   Loading piano samples… {Math.round((loadProgress.loaded / loadProgress.total) * 100)}%
                 </div>
                 <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -337,13 +354,13 @@ export default function ClientApp() {
               
               {/* Difficulty Settings */}
               <div>
-                <div className="text-xs text-gray-400 mb-2 font-semibold tracking-wider uppercase">Difficulty</div>
+                <div className="text-sm text-gray-400 mb-2 font-semibold tracking-wider uppercase">Difficulty</div>
                 <div className="flex gap-1.5 bg-black/40 p-1 rounded-xl">
                   {(["easy", "medium", "expert"] as Difficulty[]).map((d) => (
                     <button
                       key={d}
                       onClick={() => handleDifficultyChange(d)}
-                      className={`flex-1 py-2 text-xs font-bold rounded-lg capitalize transition-all duration-200 ${difficulty === d ? 'bg-gradient-to-br from-teal-500 to-purple-600 text-white shadow-lg' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                      className={`flex-1 py-2 text-sm font-bold rounded-lg capitalize transition-all duration-200 ${difficulty === d ? 'bg-gradient-to-br from-teal-500 to-purple-600 text-white shadow-lg' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                     >
                       {d}
                     </button>
@@ -355,7 +372,7 @@ export default function ClientApp() {
               <button
                 onClick={() => setPracticeMode((m) => !m)}
                 title={practiceMode ? "MIDI track muted — press keys to play" : "MIDI track plays automatically"}
-                className={`w-full py-3 px-4 flex items-center justify-center gap-2.5 text-sm font-semibold rounded-xl border transition-all duration-200 ${practiceMode ? 'bg-gradient-to-br from-teal-500/20 to-purple-600/20 border-teal-500/30 text-teal-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-300'}`}
+                className={`w-full py-3 px-4 flex items-center justify-center gap-2.5 text-base font-semibold rounded-xl border transition-all duration-200 ${practiceMode ? 'bg-gradient-to-br from-teal-500/20 to-purple-600/20 border-teal-500/30 text-teal-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-300'}`}
               >
                 <span className="text-lg">{practiceMode ? "🎹" : "🔊"}</span>
                 {practiceMode ? "Practice Mode" : "Auto-Play Mode"}
@@ -365,7 +382,7 @@ export default function ClientApp() {
               <button
                 onClick={() => setChromaSync((m) => !m)}
                 title={chromaSync ? "Distinct colors for Melody & Bass" : "ColorX Multi Color Mode"}
-                className={`w-full py-3 px-4 flex items-center justify-center gap-2.5 text-sm font-semibold rounded-xl border transition-all duration-200 ${chromaSync ? 'bg-gradient-to-br from-pink-500/20 to-orange-500/20 border-pink-500/30 text-pink-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-300'}`}
+                className={`w-full py-3 px-4 flex items-center justify-center gap-2.5 text-base font-semibold rounded-xl border transition-all duration-200 ${chromaSync ? 'bg-gradient-to-br from-pink-500/20 to-orange-500/20 border-pink-500/30 text-pink-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-300'}`}
               >
                 <span className="text-lg">{chromaSync ? "🌈" : "⬜"}</span>
                 {chromaSync ? "ColorX: ON" : "ColorX: OFF"}
@@ -373,9 +390,9 @@ export default function ClientApp() {
             </div>
             
             <div className="mt-auto pt-4 border-t border-white/5">
-              <div className="text-xs text-gray-500 mb-2 font-semibold tracking-wider uppercase">Recently Played</div>
+              <div className="text-sm text-gray-500 mb-2 font-semibold tracking-wider uppercase">Recently Played</div>
               {recentSongs.length === 0 ? (
-                <div className="text-sm text-gray-600 italic">No recent songs...</div>
+                <div className="text-base text-gray-600 italic">No recent songs...</div>
               ) : (
                 <div className="flex flex-col gap-2 max-h-[150px] overflow-y-auto pr-1">
                   {recentSongs.map((song) => (
@@ -383,7 +400,7 @@ export default function ClientApp() {
                       key={song.id}
                       onClick={() => handleLoadLibrarySong(song, difficulty)}
                       disabled={uploading}
-                      className="text-left px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-teal-300 text-sm transition-colors duration-200 truncate"
+                      className="text-left px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-teal-300 text-base transition-colors duration-200 truncate"
                     >
                       🎵 {song.title}
                     </button>
@@ -414,7 +431,7 @@ export default function ClientApp() {
 
             {/* Keyboard Size Settings */}
             <div>
-              <div className="text-xs text-gray-400 mb-2 font-semibold tracking-wider uppercase">Keyboard Size</div>
+              <div className="text-sm text-gray-400 mb-2 font-semibold tracking-wider uppercase">Keyboard Size</div>
               <div className="grid grid-cols-4 gap-1.5 bg-black/40 p-1 rounded-xl">
                 {[36, 44, 61, 88].map((size) => {
                   return (
@@ -425,7 +442,7 @@ export default function ClientApp() {
                           keyboardSize: Number(size) as any,
                         });
                       }}
-                      className={`py-2 text-xs font-bold rounded-lg transition-all duration-200 ${Number(currentKeyboardSize) === size ? 'bg-white/20 text-white shadow-lg' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                      className={`py-2 text-sm font-bold rounded-lg transition-all duration-200 ${Number(currentKeyboardSize) === size ? 'bg-white/20 text-white shadow-lg' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                     >
                       {size}
                     </button>
@@ -435,7 +452,7 @@ export default function ClientApp() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <div className="text-xs text-gray-400 font-semibold tracking-wider uppercase">Supabase Library</div>
+              <div className="text-sm text-gray-400 font-semibold tracking-wider uppercase">Supabase Library</div>
 
               {/* Render Library Songs */}
               {librarySongs.length > 0 && (
@@ -445,7 +462,7 @@ export default function ClientApp() {
                       key={song.id}
                       onClick={() => handleLoadLibrarySong(song, difficulty)}
                       disabled={uploading}
-                      className="text-left px-3 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-teal-300 text-sm transition-colors duration-200 truncate"
+                      className="text-left px-3 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-teal-300 text-base transition-colors duration-200 truncate"
                     >
                       🎵 {song.title}
                     </button>
@@ -482,13 +499,13 @@ export default function ClientApp() {
 
             {/* Speed control */}
             <div className="flex flex-col items-center gap-2">
-              <div className="text-[10px] text-gray-400 font-semibold tracking-widest uppercase">Speed</div>
+              <div className="text-xs text-gray-400 font-semibold tracking-widest uppercase">Speed</div>
               <div className="flex gap-1 bg-black/40 p-1 rounded-xl">
                 {SPEED_STEPS.map((s) => (
                   <button
                     key={s}
                     onClick={() => handleSpeedChange(s)}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 ${playbackRate === s ? 'bg-gradient-to-br from-teal-400 to-purple-400 text-white shadow-md' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                    className={`px-3 py-1.5 text-sm font-bold rounded-lg transition-all duration-200 ${playbackRate === s ? 'bg-gradient-to-br from-teal-400 to-purple-400 text-white shadow-md' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                   >
                     {s}×
                   </button>

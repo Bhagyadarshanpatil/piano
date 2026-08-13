@@ -14,42 +14,42 @@ export default function LandingPage() {
       {/* Floating stardust */}
       <div className="absolute inset-0 z-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 animate-pulse" />
 
-      <main className="z-10 relative flex flex-col items-center justify-center p-8 max-w-4xl w-full">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-12 md:p-16 shadow-[0_0_50px_rgba(16,185,129,0.15)] flex flex-col items-center text-center relative overflow-hidden">
+      <main className="z-10 relative flex flex-col items-center justify-center p-8 max-w-5xl w-full">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-16 md:p-20 shadow-[0_0_50px_rgba(16,185,129,0.15)] flex flex-col items-center text-center relative overflow-hidden">
           {/* Inner Glows */}
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/30 blur-[80px] rounded-full pointer-events-none" />
           <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-teal-500/30 blur-[80px] rounded-full pointer-events-none" />
 
           {/* Icon Badge */}
-          <div className="flex items-center justify-center w-20 h-20 rounded-full bg-white/5 border border-white/20 mb-8 shadow-[0_0_30px_rgba(52,211,153,0.3)]">
-            <Music className="w-10 h-10 text-emerald-300" />
+          <div className="flex items-center justify-center w-24 h-24 rounded-full bg-white/5 border border-white/20 mb-10 shadow-[0_0_30px_rgba(52,211,153,0.3)]">
+            <Music className="w-12 h-12 text-emerald-300" />
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-emerald-200 via-teal-100 to-cyan-200 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]">
+          <h1 className="text-6xl md:text-8xl font-extrabold tracking-tight mb-8 bg-clip-text text-transparent bg-gradient-to-r from-emerald-200 via-teal-100 to-cyan-200 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]">
             Sonaris Piano
           </h1>
 
-          <p className="text-lg md:text-xl text-emerald-100/70 max-w-2xl mb-12 leading-relaxed">
+          <p className="text-xl md:text-2xl text-emerald-100/70 max-w-3xl mb-14 leading-relaxed">
             Step into an enchanted realm of musical mastery. Experience a mesmerizing 3D piano visualizer where every keystroke illuminates the ancient forest.
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 w-full justify-center mb-5">
+          <div className="flex flex-col sm:flex-row gap-6 w-full justify-center mb-6">
             {/* Sign In */}
             <Link
               href="/login"
-              className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-full overflow-hidden transition-all duration-300 hover:scale-105 shadow-[0_0_30px_rgba(16,185,129,0.4)] hover:shadow-[0_0_40px_rgba(16,185,129,0.6)]"
+              className="group relative inline-flex items-center justify-center gap-2 px-10 py-5 text-lg font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-full overflow-hidden transition-all duration-300 hover:scale-105 shadow-[0_0_30px_rgba(16,185,129,0.4)] hover:shadow-[0_0_40px_rgba(16,185,129,0.6)]"
             >
-              <LogIn className="w-5 h-5" />
+              <LogIn className="w-6 h-6" />
               Sign In
             </Link>
 
             {/* Sign Up */}
             <Link
               href="/signup"
-              className="group inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold text-white bg-white/5 border border-white/20 rounded-full backdrop-blur-md transition-all duration-300 hover:bg-white/10 hover:border-emerald-400/40 hover:shadow-[0_0_20px_rgba(52,211,153,0.15)] hover:scale-105"
+              className="group inline-flex items-center justify-center gap-2 px-10 py-5 text-lg font-semibold text-white bg-white/5 border border-white/20 rounded-full backdrop-blur-md transition-all duration-300 hover:bg-white/10 hover:border-emerald-400/40 hover:shadow-[0_0_20px_rgba(52,211,153,0.15)] hover:scale-105"
             >
-              <UserPlus className="w-5 h-5" />
+              <UserPlus className="w-6 h-6" />
               Create Account
             </Link>
           </div>
@@ -57,9 +57,9 @@ export default function LandingPage() {
           {/* Ghost / Guest link */}
           <Link
             href="/visualizer"
-            className="text-sm text-white/30 hover:text-white/60 transition-colors duration-200 underline underline-offset-4 decoration-white/20 hover:decoration-white/40 flex items-center gap-1"
+            className="text-base text-white/30 hover:text-white/60 transition-colors duration-200 underline underline-offset-4 decoration-white/20 hover:decoration-white/40 flex items-center gap-1.5"
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-4 h-4" />
             Continue without logging in
           </Link>
         </div>

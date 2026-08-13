@@ -68,15 +68,15 @@ export default function LoginPage() {
         <ArrowLeft className="w-4 h-4" /> Back
       </Link>
 
-      <main className="z-10 w-full max-w-md">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-[0_0_50px_rgba(79,70,229,0.15)] relative overflow-hidden">
+      <main className="z-10 w-full max-w-lg">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-12 shadow-[0_0_50px_rgba(79,70,229,0.15)] relative overflow-hidden">
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/20 blur-[80px] rounded-full pointer-events-none" />
 
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold tracking-tight mb-2 bg-clip-text text-transparent bg-gradient-to-r from-indigo-200 to-cyan-200">
+          <div className="text-center mb-10">
+            <h1 className="text-4xl font-bold tracking-tight mb-3 bg-clip-text text-transparent bg-gradient-to-r from-indigo-200 to-cyan-200">
               Welcome Back
             </h1>
-            <p className="text-white/50 text-sm">Sign in to resume your magical journey</p>
+            <p className="text-white/50 text-base">Sign in to resume your magical journey</p>
           </div>
 
           {error && (

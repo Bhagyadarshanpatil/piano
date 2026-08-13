@@ -358,17 +358,16 @@ export type Settings = {
   // timeline-time; the scene morphs between consecutive pins. Lives
   // inside Settings (like `midiSpeedAutomation`) so it rides the
   // normal persistence / dirty / undo / .nfz paths. See
-  // `midi/settingsKeyframes.ts`. Empty = no automation (resolver is a
-  // bit-for-bit identity early-return).
   settingsKeyframes: SettingsKeyframe[]
 }
 
 export const defaultSettings: Settings = {
   themeColor: '#5ad7ff',
+  keyboardSize: 88,
   keyboardY: -3.15,
   cameraFov: 32,
-  cameraPos: [0, 0, 12],
-  cameraLookAt: [0, 0, 0],
+  cameraPos: [0, -5.5, 11],
+  cameraLookAt: [0, -1, 0],
   notesEnabled: true,
   fallDirection: 'down',
   fallDurationSec: 2.5,

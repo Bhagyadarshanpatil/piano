@@ -131,10 +131,10 @@ export default function OnboardingPage() {
       {/* Floating stardust / fireflies */}
       <div className="absolute inset-0 z-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 animate-pulse pointer-events-none" />
 
-      <div className="z-10 w-full max-w-xl">
+      <div className="z-10 w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 text-emerald-300/70 text-sm font-medium mb-4">
+          <div className="inline-flex items-center gap-2 text-emerald-300/70 text-base font-medium mb-4">
             <Sparkles className="w-4 h-4" />
             Step {step} of 2
           </div>
@@ -148,7 +148,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-[0_0_60px_rgba(217,70,239,0.1)] relative overflow-hidden">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-12 shadow-[0_0_60px_rgba(217,70,239,0.1)] relative overflow-hidden">
           <div className="absolute -top-20 -right-20 w-40 h-40 bg-fuchsia-500/20 blur-[70px] rounded-full pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-emerald-500/10 blur-[70px] rounded-full pointer-events-none" />
 
@@ -158,13 +158,13 @@ export default function OnboardingPage() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <User className="w-5 h-5 text-fuchsia-400" />
-                  <h1 className="text-2xl font-bold tracking-tight">Welcome, Mage!</h1>
+                  <h1 className="text-3xl font-bold tracking-tight">Welcome, Mage!</h1>
                 </div>
-                <p className="text-white/50 text-sm">Tell us a bit about yourself to personalise your journey.</p>
+                <p className="text-white/50 text-base">Tell us a bit about yourself to personalise your journey.</p>
               </div>
 
               {error && (
-                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm">
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-200 text-base">
                   {error}
                 </div>
               )}
@@ -183,7 +183,7 @@ export default function OnboardingPage() {
                     className="w-full bg-black/30 border border-white/10 rounded-xl py-3 pl-9 pr-10 text-white placeholder-white/20 focus:outline-none focus:border-fuchsia-500/50 focus:ring-1 focus:ring-fuchsia-500/50 transition-all"
                   />
                   {username.length >= 3 && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm">
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-base">
                       {usernameChecking ? (
                         <span className="text-white/30 animate-pulse">...</span>
                       ) : usernameAvailable === true ? (
@@ -236,7 +236,7 @@ export default function OnboardingPage() {
           {step === 2 && (
             <div className="space-y-8 relative z-10">
               {error && (
-                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm">
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-200 text-base">
                   {error}
                 </div>
               )}
@@ -248,7 +248,7 @@ export default function OnboardingPage() {
                     <Music2 className="w-5 h-5 text-emerald-400" />
                     <h2 className="text-xl font-bold tracking-tight">Your Sound</h2>
                   </div>
-                  <p className="text-white/50 text-sm">What music moves your soul? Pick all that apply.</p>
+                  <p className="text-white/50 text-base">What music moves your soul? Pick all that apply.</p>
                 </div>
 
                 <div className="flex flex-wrap gap-2.5">
@@ -258,7 +258,7 @@ export default function OnboardingPage() {
                       <button
                         key={genre}
                         onClick={() => toggleGenre(genre)}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-base font-medium border transition-all duration-200 ${
                           active
                             ? 'bg-gradient-to-r from-emerald-500/30 to-teal-500/30 border-emerald-400/50 text-emerald-200 shadow-[0_0_15px_rgba(52,211,153,0.2)]'
                             : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white hover:border-white/20'
@@ -284,7 +284,7 @@ export default function OnboardingPage() {
                     <Zap className="w-5 h-5 text-amber-400" />
                     <h2 className="text-xl font-bold tracking-tight">Your Level</h2>
                   </div>
-                  <p className="text-white/50 text-sm">Be honest — we'll tailor the experience just for you.</p>
+                  <p className="text-white/50 text-base">Be honest — we'll tailor the experience just for you.</p>
                 </div>
 
                 <div className="space-y-3">
@@ -328,7 +328,7 @@ export default function OnboardingPage() {
             {step > 1 && (
               <button
                 onClick={() => { setError(null); setStep(s => s - 1); }}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white text-sm font-medium transition-all"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white text-base font-medium transition-all"
               >
                 <ArrowLeft className="w-4 h-4" /> Back
               </button>
@@ -337,7 +337,7 @@ export default function OnboardingPage() {
             {step < 2 ? (
               <button
                 onClick={handleNext}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-semibold text-sm transition-all shadow-[0_0_20px_rgba(217,70,239,0.3)] hover:shadow-[0_0_30px_rgba(217,70,239,0.4)]"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-semibold text-base transition-all shadow-[0_0_20px_rgba(217,70,239,0.3)] hover:shadow-[0_0_30px_rgba(217,70,239,0.4)]"
               >
                 Continue <ArrowRight className="w-4 h-4" />
               </button>
@@ -345,7 +345,7 @@ export default function OnboardingPage() {
               <button
                 onClick={handleFinish}
                 disabled={loading}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all shadow-[0_0_20px_rgba(52,211,153,0.3)]"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-base transition-all shadow-[0_0_20px_rgba(52,211,153,0.3)]"
               >
                 {loading ? (
                   <>
