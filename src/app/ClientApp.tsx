@@ -438,8 +438,17 @@ export default function ClientApp() {
                     <button
                       key={size}
                       onClick={() => {
+                        const numKeys = Number(size);
+                        let whiteKeys = 52;
+                        if (numKeys === 61) whiteKeys = 36;
+                        if (numKeys === 44) whiteKeys = 25;
+                        if (numKeys === 36) whiteKeys = 21;
+                        const ratio = whiteKeys / 52;
+                        
                         useStore.getState().updateSettings({ 
-                          keyboardSize: Number(size) as any,
+                          keyboardSize: numKeys as any,
+                          cameraPos: [0, -5.5 * ratio, 11 * ratio],
+                          cameraLookAt: [0, -1 * ratio, 0]
                         });
                       }}
                       className={`py-2 text-sm font-bold rounded-lg transition-all duration-200 ${Number(currentKeyboardSize) === size ? 'bg-white/20 text-white shadow-lg' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}

@@ -442,7 +442,6 @@ export const defaultSettings: Settings = {
   bloomRadius: 0.7,
   bloomSmoothing: 0.4,
   backgroundColor: '#05060a',
-  keyboardSize: 88,
   whiteKeyColor: '#f5f5f5',
   blackKeyColor: '#161616',
   woodColor: '#a87d38',
