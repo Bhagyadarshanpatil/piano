@@ -64,22 +64,22 @@ export default function LoginPage() {
         <div className="absolute bottom-1/4 left-0 w-[600px] h-[600px] bg-indigo-900/20 rounded-full blur-[120px] mix-blend-screen" />
       </div>
 
-      <main className="relative z-10 w-full max-w-md mt-8 mb-8">
-        <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-white mb-8 transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm font-medium">Back to Home</span>
+      <main className="relative z-10 w-full max-w-sm mt-8 mb-8">
+        <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-white mb-6 transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-xs font-medium">Back to Home</span>
         </Link>
 
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
           {/* Inner Glows */}
           <div className="absolute -top-24 -left-24 w-48 h-48 bg-teal-500/10 blur-[80px] rounded-full pointer-events-none" />
           <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none" />
 
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold tracking-tight mb-2 bg-clip-text text-transparent bg-gradient-to-r from-teal-200 to-emerald-200">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold tracking-tight mb-1 bg-clip-text text-transparent bg-gradient-to-r from-teal-200 to-emerald-200">
               Welcome Back
             </h1>
-            <p className="text-white/50 text-sm">Resume your enchanted musical journey</p>
+            <p className="text-white/50 text-xs">Resume your enchanted musical journey</p>
           </div>
 
           {error && (

@@ -63,18 +63,18 @@ export default function SignupPage() {
   if (success) {
     return (
       <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center p-4">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(52,211,153,0.1)]">
-          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-400/30 mx-auto mb-6">
-            <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(52,211,153,0.1)]">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-400/30 mx-auto mb-4">
+            <CheckCircle2 className="w-6 h-6 text-emerald-400" />
           </div>
           
-          <h2 className="text-2xl font-bold mb-3">Check your inbox!</h2>
-          <p className="text-white/50 text-sm leading-relaxed mb-8">
+          <h2 className="text-xl font-bold mb-2">Check your inbox!</h2>
+          <p className="text-white/50 text-xs leading-relaxed mb-6">
             We sent a confirmation link to <span className="text-white font-medium">{email}</span>. 
             Please check your email and click the link to activate your account.
           </p>
 
-          <Link href="/login" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
+          <Link href="/login" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
             Return to Login
           </Link>
         </div>
@@ -90,22 +90,22 @@ export default function SignupPage() {
         <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-purple-900/20 rounded-full blur-[120px] mix-blend-screen" />
       </div>
 
-      <main className="relative z-10 w-full max-w-md mt-8 mb-8">
-        <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-white mb-8 transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm font-medium">Back to Home</span>
+      <main className="relative z-10 w-full max-w-sm mt-8 mb-8">
+        <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-white mb-6 transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-xs font-medium">Back to Home</span>
         </Link>
 
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
           {/* Inner Glows */}
           <div className="absolute -top-24 -left-24 w-48 h-48 bg-fuchsia-500/10 blur-[80px] rounded-full pointer-events-none" />
           <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/10 blur-[80px] rounded-full pointer-events-none" />
 
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold tracking-tight mb-2 bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-200 to-purple-200">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold tracking-tight mb-1 bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-200 to-purple-200">
               Create Account
             </h1>
-            <p className="text-white/50 text-sm">Begin your enchanted musical journey</p>
+            <p className="text-white/50 text-xs">Begin your enchanted musical journey</p>
           </div>
 
           {error && (

@@ -389,7 +389,7 @@ export default function ClientApp() {
                 title={practiceMode ? "MIDI track muted — press keys to play" : "MIDI track plays automatically"}
                 className={`w-full py-3 px-4 flex items-center justify-center gap-2.5 text-sm font-semibold rounded-xl border transition-all duration-200 ${practiceMode ? 'bg-gradient-to-br from-teal-500/20 to-purple-600/20 border-teal-500/30 text-teal-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-300'}`}
               >
-                <span className="text-base">{practiceMode ? "🎹" : "🔊"}</span>
+                <span className="flex items-center justify-center opacity-80">{practiceMode ? <IconKeyboard /> : <IconAutoPlay />}</span>
                 {practiceMode ? "Practice Mode" : "Auto-Play Mode"}
               </button>
 
@@ -399,7 +399,7 @@ export default function ClientApp() {
                 title={chromaSync ? "Distinct colors for Melody & Bass" : "ColorX Multi Color Mode"}
                 className={`w-full py-3 px-4 flex items-center justify-center gap-2.5 text-sm font-semibold rounded-xl border transition-all duration-200 ${chromaSync ? 'bg-gradient-to-br from-pink-500/20 to-orange-500/20 border-pink-500/30 text-pink-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-300'}`}
               >
-                <span className="text-base">{chromaSync ? "🌈" : "⬜"}</span>
+                <span className="flex items-center justify-center opacity-80">{chromaSync ? <IconPalette /> : <IconPalette />}</span>
                 {chromaSync ? "ColorX: ON" : "ColorX: OFF"}
               </button>
             </div>
@@ -415,9 +415,9 @@ export default function ClientApp() {
                       key={song.id}
                       onClick={() => handleLoadLibrarySong(song, difficulty)}
                       disabled={uploading}
-                      className="text-left px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-teal-300 text-sm transition-colors duration-200 truncate"
+                      className="text-left flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-teal-300 text-sm transition-colors duration-200 truncate"
                     >
-                      🎵 {song.title}
+                      <IconMusic /> <span className="truncate">{song.title}</span>
                     </button>
                   ))}
                 </div>
@@ -486,9 +486,9 @@ export default function ClientApp() {
                       key={song.id}
                       onClick={() => handleLoadLibrarySong(song, difficulty)}
                       disabled={uploading}
-                      className="text-left px-3 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-teal-300 text-base transition-colors duration-200 truncate"
+                      className="text-left flex items-center gap-2 px-3 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-teal-300 text-base transition-colors duration-200 truncate"
                     >
-                      🎵 {song.title}
+                      <IconMusic /> <span className="truncate">{song.title}</span>
                     </button>
                   ))}
                 </div>
@@ -499,31 +499,35 @@ export default function ClientApp() {
         </div>
 
         {/* ── Bottom Controls ───────────────────────────────────────────── */}
-        <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col gap-4 items-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${originalSong ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>
-          <div className="rounded-3xl bg-[#0a0a12]/70 backdrop-blur-3xl border border-white/10 shadow-[0_16px_60px_rgba(0,0,0,0.7)] px-8 py-5 flex flex-col gap-5 items-center">
+        <div className={`absolute left-1/2 -translate-x-1/2 flex flex-col gap-4 items-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${originalSong ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'} ${isPlaying ? 'bottom-0' : 'bottom-4'}`}>
+          <div className={`transition-all duration-700 bg-[#0a0a12]/70 backdrop-blur-3xl border border-white/10 shadow-[0_16px_60px_rgba(0,0,0,0.7)] flex flex-col items-center overflow-hidden ${isPlaying ? 'rounded-t-2xl px-6 py-2 gap-0 border-b-0 translate-y-[1px]' : 'rounded-3xl px-4 py-3 gap-3'}`}>
             
             {/* Play/Pause/Stop */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleStop}
-                className="p-3 rounded-full border border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-all duration-200"
-                title="Stop"
-              >
-                <IconStop />
-              </button>
+            <div className={`flex items-center transition-all duration-700 ${isPlaying ? 'gap-0' : 'gap-4'}`}>
+              <div className={`transition-all duration-700 overflow-hidden ${isPlaying ? 'w-0 opacity-0' : 'w-[42px] opacity-100'}`}>
+                <button
+                  onClick={handleStop}
+                  className="w-[42px] h-[42px] flex items-center justify-center rounded-full border border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-all duration-200"
+                  title="Stop"
+                >
+                  <IconStop />
+                </button>
+              </div>
 
               <button
                 onClick={handlePlayPause}
-                className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-full font-bold text-base shadow-xl transition-all duration-300 ${isPlaying ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-orange-900/30 hover:shadow-orange-900/50 hover:scale-105' : 'bg-gradient-to-r from-teal-500 to-purple-600 text-white shadow-teal-900/30 hover:shadow-teal-900/50 hover:scale-105'}`}
+                className={`flex items-center justify-center font-bold transition-all duration-700 ${isPlaying ? 'text-gray-400 hover:text-white bg-transparent hover:scale-110 shadow-none p-0 w-[42px] h-[24px]' : 'bg-gradient-to-r from-teal-500 to-purple-600 text-white shadow-teal-900/30 shadow-xl hover:shadow-teal-900/50 hover:scale-105 rounded-full px-4 py-1.5 gap-2 text-sm w-[90px]'}`}
               >
                 {isPlaying ? <IconPause /> : <IconPlay />}
-                {isPlaying ? "Pause" : "Play"}
+                <span className={`transition-all duration-700 overflow-hidden whitespace-nowrap ${isPlaying ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
+                  Play
+                </span>
               </button>
             </div>
 
             {/* Speed control */}
-            <div className="flex flex-col items-center gap-2">
-              <div className="text-xs text-gray-400 font-semibold tracking-widest uppercase">Speed</div>
+            <div className={`flex flex-col items-center transition-all duration-700 overflow-hidden ${isPlaying ? 'max-h-0 opacity-0' : 'max-h-[100px] opacity-100'}`}>
+              <div className="text-xs text-gray-400 font-semibold tracking-widest uppercase mb-2">Speed</div>
               <div className="flex gap-1 bg-black/40 p-1 rounded-xl">
                 {SPEED_STEPS.map((s) => (
                   <button
@@ -542,5 +546,50 @@ export default function ClientApp() {
 
       </div>
     </main>
+  );
+}
+
+function IconMusic() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18V5l12-2v13"></path>
+      <circle cx="6" cy="18" r="3"></circle>
+      <circle cx="18" cy="16" r="3"></circle>
+    </svg>
+  );
+}
+
+function IconKeyboard() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+      <line x1="6" y1="4" x2="6" y2="12"></line>
+      <line x1="10" y1="4" x2="10" y2="12"></line>
+      <line x1="14" y1="4" x2="14" y2="12"></line>
+      <line x1="18" y1="4" x2="18" y2="12"></line>
+      <line x1="2" y1="12" x2="22" y2="12"></line>
+    </svg>
+  );
+}
+
+function IconAutoPlay() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+    </svg>
+  );
+}
+
+function IconPalette() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
+      <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
+      <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
+      <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
+      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.5-.6 1.5-1.5 0-.4-.1-.7-.3-1-.2-.3-.3-.7-.3-1.1 0-.8.7-1.4 1.5-1.4h2.1c3.1 0 5.6-2.5 5.6-5.6C22 6.5 17.5 2 12 2z"></path>
+    </svg>
   );
 }

@@ -363,7 +363,7 @@ export type Settings = {
 
 export const defaultSettings: Settings = {
   themeColor: '#5ad7ff',
-  keyboardSize: 88,
+  keyboardSize: 61,
   keyboardY: -3.15,
   cameraFov: 32,
   cameraPos: [0, -5.5, 11],

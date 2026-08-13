@@ -131,7 +131,7 @@ export default function OnboardingPage() {
       {/* Floating stardust / fireflies */}
       <div className="absolute inset-0 z-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 animate-pulse pointer-events-none" />
 
-      <div className="z-10 w-full max-w-xl">
+      <div className="z-10 w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 text-emerald-300/70 text-sm font-medium mb-3">
@@ -146,7 +146,7 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-[0_0_60px_rgba(217,70,239,0.1)] relative overflow-hidden">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-[0_0_60px_rgba(217,70,239,0.1)] relative overflow-hidden">
           <div className="absolute -top-20 -right-20 w-40 h-40 bg-fuchsia-500/20 blur-[70px] rounded-full pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-emerald-500/10 blur-[70px] rounded-full pointer-events-none" />
 

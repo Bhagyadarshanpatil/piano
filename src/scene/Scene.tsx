@@ -26,6 +26,7 @@ const SCENE_CONTENTS_KEYS = [
   'flashEnabled',
   'notesEnabled',
   'fallDirection',
+  'keyboardSize',
 ] as const
 const PLAY_TOGGLE_KEYS = [
   'cameraFov',
@@ -194,6 +195,11 @@ function SceneContents({ recState }: { recState: 'idle' | 'recording' }) {
 
   const isDown = s.fallDirection === 'down'
 
+  let scaleX = 1;
+  if (s.keyboardSize === 61) scaleX = 1.25;
+  if (s.keyboardSize === 44) scaleX = 1.45;
+  if (s.keyboardSize === 36) scaleX = 1.6;
+
   return (
     <>
       <ambientLight intensity={0.35} />
@@ -202,7 +208,7 @@ function SceneContents({ recState }: { recState: 'idle' | 'recording' }) {
       <CameraControls />
       <R3FStateBridge />
       {editMode ? <EditTools /> : <PlayToggleArea />}
-      <group>
+      <group scale={[scaleX, 1, 1]}>
         <group scale={[1, isDown ? 1 : -1, 1]}>
           <Keyboard />
           <KeyboardFrontRail />
@@ -546,25 +552,30 @@ function CameraSync({
   fov: number
 }) {
   const { camera } = useThree()
+  const transport = useStore((s) => s.transport)
+  const currentOffset = useRef(0)
 
   // Non-pin (or zero-pin) path: apply on prop change so a slider drag
   // updates the camera immediately even while paused. With pins this
   // sets the base framing; the per-frame block below then overrides
   // with the resolved (interpolated) values.
   useEffect(() => {
-    camera.position.set(pos[0], pos[1], pos[2])
+    camera.position.set(pos[0], pos[1] + currentOffset.current, pos[2])
     if ('fov' in camera) {
       ;(camera as THREE.PerspectiveCamera).fov = fov
       ;(camera as THREE.PerspectiveCamera).updateProjectionMatrix()
     }
-    camera.lookAt(...lookAt)
+    camera.lookAt(lookAt[0], lookAt[1] + currentOffset.current, lookAt[2])
   }, [camera, pos, lookAt, fov])
   // Follow the pin-resolved camera every frame. With zero pins the
   // resolved values equal the props, so position/fov writes are
   // idempotent and this collapses to the original "re-aim lookAt each
   // frame in case other code moved the camera" behaviour.
   const prevFov = useRef<number | null>(null)
-  useFrame(() => {
+  useFrame((state, delta) => {
+    // Target offset: move camera UP so scene shifts DOWN when playing
+    const targetOffset = transport === 'playing' ? 0.8 : 0;
+    currentOffset.current = THREE.MathUtils.lerp(currentOffset.current, targetOffset, delta * 4);
     // While the user is actively orbiting / panning / wheel-dollying,
     // show the value the gesture is WRITING — the edit target: the
     // selected pin's snapshot (animatable) or base, identical to the
@@ -595,7 +606,7 @@ function CameraSync({
     }
     const [px, py, pz] = cp
     const [lx, ly, lz] = cl
-    camera.position.set(px, py, pz)
+    camera.position.set(px, py + currentOffset.current, pz)
     if ('fov' in camera) {
       const persp = camera as THREE.PerspectiveCamera
       if (persp.fov !== cf || prevFov.current !== cf) {
@@ -604,7 +615,7 @@ function CameraSync({
         prevFov.current = cf
       }
     }
-    camera.lookAt(lx, ly, lz)
+    camera.lookAt(lx, ly + currentOffset.current, lz)
   })
   return null
 }

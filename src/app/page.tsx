@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Sparkles, Music, LogIn, UserPlus } from 'lucide-react';
+import { Sparkles, Music4, ArrowRight } from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -15,42 +15,38 @@ export default function LandingPage() {
       <div className="absolute inset-0 z-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 animate-pulse" />
 
       <main className="z-10 relative flex flex-col items-center justify-center p-6 max-w-4xl w-full">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-12 md:p-16 shadow-[0_0_50px_rgba(16,185,129,0.15)] flex flex-col items-center text-center relative overflow-hidden">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-10 shadow-[0_0_50px_rgba(16,185,129,0.15)] flex flex-col items-center text-center relative overflow-hidden">
           {/* Inner Glows */}
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/30 blur-[80px] rounded-full pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-teal-500/30 blur-[80px] rounded-full pointer-events-none" />
+          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-cyan-500/20 blur-[80px] rounded-full pointer-events-none" />
 
           {/* Icon Badge */}
-          <div className="flex items-center justify-center w-20 h-20 rounded-full bg-white/5 border border-white/20 mb-8 shadow-[0_0_30px_rgba(52,211,153,0.3)]">
-            <Music className="w-10 h-10 text-emerald-300" />
+          <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 mb-6 shadow-[0_0_30px_rgba(52,211,153,0.4)]">
+            <Music4 className="w-8 h-8 text-white" />
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-emerald-200 via-teal-100 to-cyan-200 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]">
-            Aether Keys
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-emerald-200 via-teal-100 to-cyan-200 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]">
+            Sonaris Piano
           </h1>
 
-          <p className="text-lg md:text-xl text-emerald-100/70 max-w-2xl mb-12 leading-relaxed">
+          <p className="text-base md:text-lg text-emerald-100/70 max-w-xl mb-8 leading-relaxed">
             Experience the next generation of piano visualization. Upload your MIDI files, connect your keyboard, and watch your music come to life in a stunning 3D environment.
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-5 w-full justify-center mb-6">
-            {/* Sign In */}
-            <Link
-              href="/login"
-              className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-full overflow-hidden transition-all duration-300 hover:scale-105 shadow-[0_0_30px_rgba(16,185,129,0.4)] hover:shadow-[0_0_40px_rgba(16,185,129,0.6)]"
-            >
-              <LogIn className="w-5 h-5" />
-              <span>Login to Play</span>
-            </Link>
-
-            {/* Sign Up */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto mb-6">
             <Link
               href="/signup"
-              className="group inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-white/5 border border-white/20 rounded-full backdrop-blur-md transition-all duration-300 hover:bg-white/10 hover:border-emerald-400/40 hover:shadow-[0_0_20px_rgba(52,211,153,0.15)] hover:scale-105"
+              className="w-full sm:w-auto px-6 py-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-sm transition-all shadow-[0_0_20px_rgba(52,211,153,0.4)] hover:shadow-[0_0_30px_rgba(52,211,153,0.6)] flex items-center justify-center gap-2 hover:scale-105"
             >
-              <UserPlus className="w-5 h-5" />
-              <span>Create Account</span>
+              Get Started <ArrowRight className="w-4 h-4" />
+            </Link>
+            
+            <Link
+              href="/login"
+              className="w-full sm:w-auto px-6 py-3 rounded-full bg-white/5 hover:bg-white/10 text-white font-semibold text-sm transition-all border border-white/10 hover:border-white/20 flex items-center justify-center gap-2 hover:scale-105"
+            >
+              Sign In
             </Link>
           </div>
 

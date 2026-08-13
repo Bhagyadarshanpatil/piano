@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Aether Keys",
+  title: "Sonaris Piano",
   description: "Experience the next generation of 3D piano visualization.",
 };
 
