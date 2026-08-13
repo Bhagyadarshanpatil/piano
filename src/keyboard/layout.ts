@@ -140,8 +140,13 @@ export function adjacentBlackKeys(midi: number, size: number): {
 }
 
 // Notes hit the back edge of the keyboard.
-export function noteHitYWorld(keyboardYWorld: number): number {
-  return keyboardYWorld + WHITE_KEY_LENGTH
+export function noteHitYWorld(keyboardYWorld: number, isDown: boolean = true): number {
+  return isDown ? keyboardYWorld + WHITE_KEY_LENGTH : -keyboardYWorld - WHITE_KEY_LENGTH
+}
+
+export function isBehindKeyboard(worldY: number, keyboardYWorld: number, isDown: boolean = true): boolean {
+  const hitY = noteHitYWorld(keyboardYWorld, isDown)
+  return isDown ? worldY < hitY : worldY > hitY
 }
 
 // Fixed 88-key layout used by whiteKeyShader to precompute the maximum possible black key shadows

@@ -9,6 +9,7 @@ const HIT_PARTICLES_KEYS = [
   'cameraLookAt',
   'cameraPos',
   'drag',
+  'fallDirection',
   'fallDurationSec',
   'flowSpeed',
   'keyboardY',
@@ -37,7 +38,7 @@ const HIT_PARTICLES_KEYS = [
 import { audioEngine } from '../audio/engine'
 import { now } from '../audio/clock'
 import { getResolvedSettings } from '../scene/automatedSettings'
-import { getKeyboardLayout, getKeyboardBounds, WHITE_KEY_LENGTH, WHITE_KEY_WIDTH } from '../keyboard/layout'
+import { getKeyboardLayout, getKeyboardBounds, noteHitYWorld, WHITE_KEY_WIDTH } from '../keyboard/layout'
 import { sampleCurl, dirFromXY } from './curlNoise'
 import { noteDeathFx } from './noteDeathFx'
 
@@ -469,11 +470,11 @@ export function HitParticles() {
     material.uniforms.uOpacity.value = rs.particleOpacity
     material.uniforms.uBrightness.value = rs.particleBrightness
     material.uniforms.uTime.value = nowSec
-    material.uniforms.uHitY.value = rs.keyboardY + WHITE_KEY_LENGTH
+    material.uniforms.uHitY.value = noteHitYWorld(rs.keyboardY, rs.fallDirection === 'down')
 
     if (!settings.particlesEnabled) return
 
-    const hitY = rs.keyboardY + WHITE_KEY_LENGTH
+    const hitY = noteHitYWorld(rs.keyboardY, rs.fallDirection === 'down')
     // Minimum emission duration in seconds, derived from the falling-note
     // `noteMinLength` (world units) using the same fall-distance ↔ time
     // conversion FallingNotes uses. Recomputed per frame so changes to

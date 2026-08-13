@@ -121,6 +121,7 @@ export default function ClientApp() {
 
   const transport = useStore((s) => s.transport);
   const playbackRate = useStore((s) => s.settings.playbackRate);
+  const currentKeyboardSize = useStore((s) => s.settings.keyboardSize);
 
   const isPlaying = transport === "playing";
 
@@ -416,29 +417,15 @@ export default function ClientApp() {
               <div className="text-xs text-gray-400 mb-2 font-semibold tracking-wider uppercase">Keyboard Size</div>
               <div className="grid grid-cols-4 gap-1.5 bg-black/40 p-1 rounded-xl">
                 {[36, 44, 61, 88].map((size) => {
-                  const currentSize = useStore.getState().settings.keyboardSize;
                   return (
                     <button
                       key={size}
                       onClick={() => {
-                        let zPos = 9.5;
-                        if (size === 61) zPos = 7.0;
-                        else if (size === 44) zPos = 5.2;
-                        else if (size === 36) zPos = 4.4;
-                        
-                        // We also need to scale Y to keep the hitline in the same relative screen position
-                        // The default camera is [0, -3.5, 9.5] looking at [0, 4.5, -3]
-                        let yPos = -3.5;
-                        if (size === 61) yPos = -2.5;
-                        else if (size === 44) yPos = -1.8;
-                        else if (size === 36) yPos = -1.5;
-
                         useStore.getState().updateSettings({ 
-                          keyboardSize: size as any,
-                          cameraPos: [0, yPos, zPos]
+                          keyboardSize: Number(size) as any,
                         });
                       }}
-                      className={`py-2 text-xs font-bold rounded-lg transition-all duration-200 ${currentSize === size ? 'bg-white/20 text-white shadow-lg' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                      className={`py-2 text-xs font-bold rounded-lg transition-all duration-200 ${Number(currentKeyboardSize) === size ? 'bg-white/20 text-white shadow-lg' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                     >
                       {size}
                     </button>

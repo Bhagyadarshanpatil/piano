@@ -365,7 +365,7 @@ export type Settings = {
 
 export const defaultSettings: Settings = {
   themeColor: '#5ad7ff',
-  keyboardY: -2.0,
+  keyboardY: -3.15,
   cameraFov: 32,
   cameraPos: [0, 0, 12],
   cameraLookAt: [0, 0, 0],

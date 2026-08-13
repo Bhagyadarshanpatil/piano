@@ -83,7 +83,7 @@ export function frustumBottom(settings: Settings): number {
 }
 
 export function fallDistance(settings: Settings): number {
-  const hitY = noteHitYWorld(settings.keyboardY)
+  const hitY = noteHitYWorld(settings.keyboardY, settings.fallDirection === 'down')
   return Math.max(0.5, frustumTop(settings) - hitY) + SPAWN_BUFFER
 }
 
@@ -101,7 +101,7 @@ export function clickYToTime(
   settings: Settings,
   ctx: TimeContext,
 ): number {
-  const hitY = noteHitYWorld(settings.keyboardY)
+  const hitY = noteHitYWorld(settings.keyboardY, settings.fallDirection === 'down')
   const headT = ((y - hitY) / fallDistance(settings)) * settings.fallDurationSec
   const audioAtClick =
     settings.fallDirection === 'down'
@@ -145,7 +145,7 @@ export function timeToHeadY(
   settings: Settings,
   ctx: TimeContext,
 ): number {
-  const hitY = noteHitYWorld(settings.keyboardY)
+  const hitY = noteHitYWorld(settings.keyboardY, settings.fallDirection === 'down')
   const fd = fallDistance(settings)
   const fireAudio = ctx.midiOffset + midiToTimeline(ctx.speedMap, time)
   const headT =
@@ -195,7 +195,7 @@ export function noteVisualBounds(
   const width = key.width * settings.noteWidthScale
   const halfWidth = width / 2
 
-  const hitY = noteHitYWorld(settings.keyboardY)
+  const hitY = noteHitYWorld(settings.keyboardY, settings.fallDirection === 'down')
   const fd = fallDistance(settings)
   const fall = settings.fallDurationSec
   const minLength = Math.max(0.01, settings.noteMinLength)

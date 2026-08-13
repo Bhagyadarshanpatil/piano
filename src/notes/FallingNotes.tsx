@@ -7,7 +7,7 @@ import { computeLiveVisibleTop } from '../scene/visibleTop'
 import { getResolvedSettings } from '../scene/automatedSettings'
 import { audioEngine } from '../audio/engine'
 import { now } from '../audio/clock'
-import { getKeyboardLayout, getKeyboardBounds, noteHitYWorld } from '../keyboard/layout'
+import { getKeyboardLayout, getKeyboardBounds, noteHitYWorld, isBehindKeyboard } from '../keyboard/layout'
 import { useCustomTexture } from './customTexture'
 import { deleteNotes, moveNotes, splitNote } from '../midi/edit'
 import { ensureSamplerLoaded, previewNote } from '../audio/preview'
@@ -49,7 +49,7 @@ const FALL_REFERENCE_DISTANCE =
     defaultSettings.cameraLookAt[1] +
       Math.abs(defaultSettings.cameraPos[2]) *
         Math.tan((defaultSettings.cameraFov * Math.PI) / 360) -
-      noteHitYWorld(defaultSettings.keyboardY),
+      noteHitYWorld(defaultSettings.keyboardY, defaultSettings.fallDirection === 'down'),
   ) + SPAWN_BUFFER
 
 // Shared in/out object for `computeRisingRect`. Reused across notes so
@@ -680,8 +680,8 @@ export function FallingNotes() {
     // object by reference, so all reads are bit-identical to pre-pin.
     const rs = getResolvedSettings()
     const midiOffset = settings.midiOffsetSec
-    const hitY = noteHitYWorld(rs.keyboardY)
     const isDown = settings.fallDirection === 'down'
+    const hitY = noteHitYWorld(rs.keyboardY, isDown)
     const fall = rs.fallDurationSec
     const widthScale = rs.noteWidthScale
     const minLength = Math.max(0.01, rs.noteMinLength)
@@ -1312,7 +1312,7 @@ export function FallingNotes() {
     // still hit the geometry). Reject hits whose world-y is below the hit
     // line so clicks on the keyboard area don't grab visually-hidden
     // notes; let the event fall through for other handlers to pick up.
-    if (e.point.y < noteHitYWorld(settings.keyboardY)) return
+    if (isBehindKeyboard(e.point.y, settings.keyboardY, settings.fallDirection === 'down')) return
     const instId = e.instanceId
     if (instId === undefined) return
     const noteId = instanceToNoteId.current[instId]
@@ -1377,7 +1377,7 @@ export function FallingNotes() {
     // so without this guard a click on the keyboard area would land on a
     // visually-hidden note. Don't stopPropagation — let the event reach
     // EditTools / Keyboard as if we missed.
-    if (e.point.y < noteHitYWorld(settings.keyboardY)) return
+    if (isBehindKeyboard(e.point.y, settings.keyboardY, settings.fallDirection === 'down')) return
     // In edit mode we own every click on the note plane geometry. Stop
     // propagation up-front so EditTools' empty-area clear-selection
     // handler can't fire on the same gesture even if the instance lookup
@@ -1505,7 +1505,7 @@ export function FallingNotes() {
   // between the first and second click.
   const onDoubleClickNote = (e: ThreeEvent<MouseEvent>) => {
     if (transport === 'playing') return
-    if (e.point.y < noteHitYWorld(settings.keyboardY)) return
+    if (isBehindKeyboard(e.point.y, settings.keyboardY, settings.fallDirection === 'down')) return
     e.stopPropagation()
     if (!audioEngine.isReady()) {
       void ensureSamplerLoaded()

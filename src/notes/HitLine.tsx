@@ -4,9 +4,10 @@ import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { useStore, useSettingsSlice } from '../store'
 import { getResolvedSettings } from '../scene/automatedSettings'
-import { getKeyboardLayout, WHITE_KEY_LENGTH } from '../keyboard/layout'
+import { getKeyboardLayout, noteHitYWorld } from '../keyboard/layout'
 
 const HIT_LINE_KEYS = [
+  'fallDirection',
   'hitLineBarHalo',
   'hitLineBarY',
   'hitLineColor',
@@ -259,7 +260,7 @@ export function HitLine() {
     // the resolver passes it straight through, so this stays correct
     // whether or not pins are present. Zero pins ⇒ same Y the JSX prop
     // computes, so no visible change.
-    const hitYR = r.keyboardY + WHITE_KEY_LENGTH
+    const hitYR = noteHitYWorld(r.keyboardY, r.fallDirection === 'down')
     if (barMeshRef.current) barMeshRef.current.position.y = hitYR + r.hitLineBarY
     if (waveMeshRef.current) waveMeshRef.current.position.y = hitYR + r.hitLineWaveY
 
@@ -269,7 +270,7 @@ export function HitLine() {
 
   if (!settings.hitLineEnabled) return null
 
-  const hitY = settings.keyboardY + WHITE_KEY_LENGTH
+  const hitY = noteHitYWorld(settings.keyboardY, settings.fallDirection === 'down')
   const layout = getKeyboardLayout(useStore((st) => st.settings.keyboardSize))
   const planeWidth = layout.totalWidth + PLANE_WIDTH_PAD
 

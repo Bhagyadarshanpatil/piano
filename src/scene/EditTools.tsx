@@ -33,6 +33,7 @@ import {
   getKeyboardBounds,
   WHITE_KEY_LENGTH,
   noteHitYWorld,
+  isBehindKeyboard,
 } from '../keyboard/layout'
 
 /**
@@ -357,8 +358,8 @@ export function EditTools() {
   ) => {
     const cur = useStore.getState()
     const settings = cur.settings
-    const hitY = noteHitYWorld(settings.keyboardY)
-    if (startWorld.y <= hitY) return // below hit line: no-op
+    const hitY = noteHitYWorld(settings.keyboardY, settings.fallDirection === 'down')
+    if (isBehindKeyboard(startWorld.y, settings.keyboardY, settings.fallDirection === 'down')) return // behind keyboard: no-op
 
     const tl = audioEngine.currentSongTime()
     const time = clickYToTime(startWorld.y, tl, settings, timeCtx)

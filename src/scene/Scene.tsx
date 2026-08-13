@@ -25,12 +25,14 @@ const SCENE_CONTENTS_KEYS = [
   'cameraPos',
   'flashEnabled',
   'notesEnabled',
+  'fallDirection',
 ] as const
 const PLAY_TOGGLE_KEYS = [
   'cameraFov',
   'cameraLookAt',
   'cameraPos',
   'keyboardY',
+  'keyboardSize',
 ] as const
 import { recorder } from '../audio/recorder'
 import { registerR3FStateGetter } from './exportBridge'
@@ -188,12 +190,10 @@ function ThrottledTicker({ intervalMs }: { intervalMs: number }) {
 function SceneContents({ recState }: { recState: 'idle' | 'recording' }) {
   const s = useSettingsSlice(SCENE_CONTENTS_KEYS)
   const transport = useStore((st) => st.transport)
-  // Edit mode = not currently playing or recording. Mounting EditTools
-  // (instead of PlayToggleArea) flips the meaning of every empty-area
-  // click — "toggle play" becomes "select / range / add note". Live
-  // performance / fast-forward UX stays untouched while playing. With
-  // no song loaded the first added note bootstraps an empty song.
   const editMode = transport !== 'playing' && recState !== 'recording'
+
+  const isDown = s.fallDirection === 'down'
+
   return (
     <>
       <ambientLight intensity={0.35} />
@@ -202,13 +202,17 @@ function SceneContents({ recState }: { recState: 'idle' | 'recording' }) {
       <CameraControls />
       <R3FStateBridge />
       {editMode ? <EditTools /> : <PlayToggleArea />}
-      <Keyboard />
-      <KeyboardFrontRail />
-      <KeyboardCheekBlocks />
-      {s.notesEnabled && <FallingNotes />}
-      {s.flashEnabled && <LandingFlashes />}
-      <HitParticles />
-      <HitLine />
+      <group>
+        <group scale={[1, isDown ? 1 : -1, 1]}>
+          <Keyboard />
+          <KeyboardFrontRail />
+          <KeyboardCheekBlocks />
+          {s.flashEnabled && <LandingFlashes />}
+        </group>
+        {s.notesEnabled && <FallingNotes />}
+        <HitParticles />
+        <HitLine />
+      </group>
     </>
   )
 }
@@ -542,23 +546,19 @@ function CameraSync({
   fov: number
 }) {
   const { camera } = useThree()
-  const keyboardSize = useStore((st) => st.settings.keyboardSize)
-  const defaultLayout = useMemo(() => getKeyboardLayout(88), [])
-  const layout = useMemo(() => getKeyboardLayout(keyboardSize), [keyboardSize])
-  const zoomFactor = layout.totalWidth / defaultLayout.totalWidth
 
   // Non-pin (or zero-pin) path: apply on prop change so a slider drag
   // updates the camera immediately even while paused. With pins this
   // sets the base framing; the per-frame block below then overrides
   // with the resolved (interpolated) values.
   useEffect(() => {
-    camera.position.set(pos[0], pos[1] * zoomFactor, pos[2] * zoomFactor)
+    camera.position.set(pos[0], pos[1], pos[2])
     if ('fov' in camera) {
       ;(camera as THREE.PerspectiveCamera).fov = fov
       ;(camera as THREE.PerspectiveCamera).updateProjectionMatrix()
     }
     camera.lookAt(...lookAt)
-  }, [camera, pos, lookAt, fov, zoomFactor])
+  }, [camera, pos, lookAt, fov])
   // Follow the pin-resolved camera every frame. With zero pins the
   // resolved values equal the props, so position/fov writes are
   // idempotent and this collapses to the original "re-aim lookAt each
@@ -595,7 +595,7 @@ function CameraSync({
     }
     const [px, py, pz] = cp
     const [lx, ly, lz] = cl
-    camera.position.set(px, py * zoomFactor, pz * zoomFactor)
+    camera.position.set(px, py, pz)
     if ('fov' in camera) {
       const persp = camera as THREE.PerspectiveCamera
       if (persp.fov !== cf || prevFov.current !== cf) {
