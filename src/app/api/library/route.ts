@@ -3,13 +3,16 @@ import { NextResponse } from 'next/server'
 
 // Initialize Supabase client
 // Note: We use the environment variables configured in .env.local
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// Ensure the URL is correctly formatted for the Supabase client (it shouldn't have /rest/v1/)
-const formattedUrl = supabaseUrl.replace(/\/rest\/v1\/?$/, '')
+// Create client only if credentials are available
+let supabase: any = null
 
-const supabase = createClient(formattedUrl, supabaseAnonKey)
+if (supabaseUrl && supabaseAnonKey) {
+  const formattedUrl = supabaseUrl.replace(/\/rest\/v1\/?$/, '')
+  supabase = createClient(formattedUrl, supabaseAnonKey)
+}
 
 export type Track = {
   id: string
@@ -21,6 +24,9 @@ export type Track = {
 }
 
 export async function GET() {
+  if (!supabase) {
+    return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 })
+  }
   try {
     const { data: tracks, error } = await supabase
       .from('tracks')
