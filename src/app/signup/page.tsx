@@ -63,17 +63,19 @@ export default function SignupPage() {
   if (success) {
     return (
       <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center p-4">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-14 max-w-lg w-full text-center shadow-[0_0_50px_rgba(52,211,153,0.1)]">
-          <div className="flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-400/30 mx-auto mb-8">
-            <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(52,211,153,0.1)]">
+          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-400/30 mx-auto mb-6">
+            <CheckCircle2 className="w-8 h-8 text-emerald-400" />
           </div>
-          <h2 className="text-3xl font-bold mb-4">Check your inbox!</h2>
-          <p className="text-white/50 text-base leading-relaxed mb-10">
+          
+          <h2 className="text-2xl font-bold mb-3">Check your inbox!</h2>
+          <p className="text-white/50 text-sm leading-relaxed mb-8">
             We sent a confirmation link to <span className="text-white font-medium">{email}</span>. 
-            Click it to verify your account and start your journey.
+            Please check your email and click the link to activate your account.
           </p>
-          <Link href="/login" className="text-base text-indigo-400 hover:text-indigo-300 transition-colors">
-            Back to Sign In
+
+          <Link href="/login" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
+            Return to Login
           </Link>
         </div>
       </div>
@@ -88,21 +90,22 @@ export default function SignupPage() {
         <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-purple-900/20 rounded-full blur-[120px] mix-blend-screen" />
       </div>
 
-      <main className="relative z-10 w-full max-w-lg mt-8 mb-8">
+      <main className="relative z-10 w-full max-w-md mt-8 mb-8">
         <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-white mb-8 transition-colors">
           <ArrowLeft className="w-5 h-5" />
-          <span className="text-base font-medium">Back to Home</span>
+          <span className="text-sm font-medium">Back to Home</span>
         </Link>
 
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-12 shadow-2xl relative overflow-hidden">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+          {/* Inner Glows */}
           <div className="absolute -top-24 -left-24 w-48 h-48 bg-fuchsia-500/10 blur-[80px] rounded-full pointer-events-none" />
           <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/10 blur-[80px] rounded-full pointer-events-none" />
 
-          <div className="text-center mb-10">
-            <h1 className="text-4xl font-bold tracking-tight mb-3 bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-200 to-purple-200">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold tracking-tight mb-2 bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-200 to-purple-200">
               Create Account
             </h1>
-            <p className="text-white/50 text-base">Begin your enchanted musical journey</p>
+            <p className="text-white/50 text-sm">Begin your enchanted musical journey</p>
           </div>
 
           {error && (
@@ -200,10 +203,16 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all shadow-[0_0_20px_rgba(217,70,239,0.3)] mt-2"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all shadow-[0_0_20px_rgba(217,70,239,0.3)] mt-2"
             >
-              <UserPlus className="w-5 h-5" />
-              {loading ? 'Creating account…' : 'Create Account'}
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  <UserPlus className="w-5 h-5" />
+                  Sign Up
+                </>
+              )}
             </button>
           </form>
 
@@ -216,7 +225,7 @@ export default function SignupPage() {
           <button
             onClick={handleOAuthGoogle}
             disabled={loading}
-            className="mt-6 w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 disabled:opacity-50 rounded-xl transition-all text-white font-medium"
+            className="mt-6 w-full flex items-center justify-center gap-3 py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 disabled:opacity-50 rounded-xl transition-all text-white font-medium"
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

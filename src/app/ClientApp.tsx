@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import * as Tone from "tone";
 import { Scene } from "../scene/Scene";
 import { useStore } from "../store";
 import { audioEngine } from "../audio/engine";
@@ -72,6 +73,20 @@ type LibrarySong = {
 };
 
 export default function ClientApp() {
+  useEffect(() => {
+    const handleFirstInteraction = async () => {
+      await Tone.start();
+      window.removeEventListener('pointerdown', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+    };
+    window.addEventListener('pointerdown', handleFirstInteraction);
+    window.addEventListener('keydown', handleFirstInteraction);
+    return () => {
+      window.removeEventListener('pointerdown', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+    };
+  }, []);
+
   const [originalSong, setOriginalSong] = useState<ParsedSong | null>(null);
   const [songName, setSongName] = useState<string>("");
   const [loadProgress, setLoadProgress] = useState<{ loaded: number; total: number } | null>(null);
@@ -307,22 +322,22 @@ export default function ClientApp() {
       <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden font-sans">
 
         {/* ── Left Panel ───────────────────────────────────────────── */}
-        <div className={`absolute top-6 left-6 bottom-32 w-[340px] flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${isPlaying ? '-translate-x-[120%]' : 'translate-x-0'}`}>
+        <div className={`absolute top-6 left-6 bottom-32 w-[280px] flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${isPlaying ? '-translate-x-[120%]' : 'translate-x-0'}`}>
           <div className="flex-1 rounded-2xl bg-[#0a0a12]/50 backdrop-blur-2xl border border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-6 flex flex-col gap-6 overflow-y-auto">
             {/* Title */}
             <div>
-              <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-teal-300 to-purple-400 mb-1 tracking-tight">
+              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-teal-300 to-purple-400 mb-1 tracking-tight">
                 Aether Keys
               </h1>
               {songName ? (
-                <p className="text-base text-gray-400 truncate">🎵 {songName}</p>
+                <p className="text-sm text-gray-400 truncate">🎵 {songName}</p>
               ) : (
-                <p className="text-base text-gray-500">Upload a MIDI file to begin</p>
+                <p className="text-sm text-gray-500">Upload a MIDI file to begin</p>
               )}
             </div>
 
             {/* Upload Button */}
-            <label className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all duration-200 text-base font-semibold ${uploading ? 'bg-teal-400/10 border-teal-400/20 text-teal-300 cursor-default' : 'bg-white/5 border-white/10 text-white hover:bg-white/10 cursor-pointer'}`}>
+            <label className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl border transition-all duration-200 text-sm font-semibold ${uploading ? 'bg-teal-400/10 border-teal-400/20 text-teal-300 cursor-default' : 'bg-white/5 border-white/10 text-white hover:bg-white/10 cursor-pointer'}`}>
               <IconUpload />
               <span>{uploading ? "Loading…" : "Upload MIDI"}</span>
               <input
@@ -337,7 +352,7 @@ export default function ClientApp() {
             {/* Sample load progress bar */}
             {loadProgress && loadProgress.total > 0 && loadProgress.loaded < loadProgress.total && (
               <div>
-                <div className="text-sm text-gray-400 mb-1.5 font-medium">
+                <div className="text-xs text-gray-400 mb-1.5 font-medium">
                   Loading piano samples… {Math.round((loadProgress.loaded / loadProgress.total) * 100)}%
                 </div>
                 <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -354,13 +369,13 @@ export default function ClientApp() {
               
               {/* Difficulty Settings */}
               <div>
-                <div className="text-sm text-gray-400 mb-2 font-semibold tracking-wider uppercase">Difficulty</div>
+                <div className="text-xs text-gray-400 mb-2 font-semibold tracking-wider uppercase">Difficulty</div>
                 <div className="flex gap-1.5 bg-black/40 p-1 rounded-xl">
                   {(["easy", "medium", "expert"] as Difficulty[]).map((d) => (
                     <button
                       key={d}
                       onClick={() => handleDifficultyChange(d)}
-                      className={`flex-1 py-2 text-sm font-bold rounded-lg capitalize transition-all duration-200 ${difficulty === d ? 'bg-gradient-to-br from-teal-500 to-purple-600 text-white shadow-lg' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg capitalize transition-all duration-200 ${difficulty === d ? 'bg-gradient-to-br from-teal-500 to-purple-600 text-white shadow-lg' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                     >
                       {d}
                     </button>
@@ -372,9 +387,9 @@ export default function ClientApp() {
               <button
                 onClick={() => setPracticeMode((m) => !m)}
                 title={practiceMode ? "MIDI track muted — press keys to play" : "MIDI track plays automatically"}
-                className={`w-full py-3 px-4 flex items-center justify-center gap-2.5 text-base font-semibold rounded-xl border transition-all duration-200 ${practiceMode ? 'bg-gradient-to-br from-teal-500/20 to-purple-600/20 border-teal-500/30 text-teal-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-300'}`}
+                className={`w-full py-3 px-4 flex items-center justify-center gap-2.5 text-sm font-semibold rounded-xl border transition-all duration-200 ${practiceMode ? 'bg-gradient-to-br from-teal-500/20 to-purple-600/20 border-teal-500/30 text-teal-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-300'}`}
               >
-                <span className="text-lg">{practiceMode ? "🎹" : "🔊"}</span>
+                <span className="text-base">{practiceMode ? "🎹" : "🔊"}</span>
                 {practiceMode ? "Practice Mode" : "Auto-Play Mode"}
               </button>
 
@@ -382,17 +397,17 @@ export default function ClientApp() {
               <button
                 onClick={() => setChromaSync((m) => !m)}
                 title={chromaSync ? "Distinct colors for Melody & Bass" : "ColorX Multi Color Mode"}
-                className={`w-full py-3 px-4 flex items-center justify-center gap-2.5 text-base font-semibold rounded-xl border transition-all duration-200 ${chromaSync ? 'bg-gradient-to-br from-pink-500/20 to-orange-500/20 border-pink-500/30 text-pink-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-300'}`}
+                className={`w-full py-3 px-4 flex items-center justify-center gap-2.5 text-sm font-semibold rounded-xl border transition-all duration-200 ${chromaSync ? 'bg-gradient-to-br from-pink-500/20 to-orange-500/20 border-pink-500/30 text-pink-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-300'}`}
               >
-                <span className="text-lg">{chromaSync ? "🌈" : "⬜"}</span>
+                <span className="text-base">{chromaSync ? "🌈" : "⬜"}</span>
                 {chromaSync ? "ColorX: ON" : "ColorX: OFF"}
               </button>
             </div>
             
             <div className="mt-auto pt-4 border-t border-white/5">
-              <div className="text-sm text-gray-500 mb-2 font-semibold tracking-wider uppercase">Recently Played</div>
+              <div className="text-xs text-gray-500 mb-2 font-semibold tracking-wider uppercase">Recently Played</div>
               {recentSongs.length === 0 ? (
-                <div className="text-base text-gray-600 italic">No recent songs...</div>
+                <div className="text-sm text-gray-600 italic">No recent songs...</div>
               ) : (
                 <div className="flex flex-col gap-2 max-h-[150px] overflow-y-auto pr-1">
                   {recentSongs.map((song) => (
@@ -400,7 +415,7 @@ export default function ClientApp() {
                       key={song.id}
                       onClick={() => handleLoadLibrarySong(song, difficulty)}
                       disabled={uploading}
-                      className="text-left px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-teal-300 text-base transition-colors duration-200 truncate"
+                      className="text-left px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-teal-300 text-sm transition-colors duration-200 truncate"
                     >
                       🎵 {song.title}
                     </button>
@@ -412,14 +427,14 @@ export default function ClientApp() {
         </div>
 
         {/* ── Right Panel ───────────────────────────────────────────── */}
-        <div className={`absolute top-6 right-6 bottom-32 w-[340px] flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${isPlaying ? 'translate-x-[120%]' : 'translate-x-0'}`}>
+        <div className={`absolute top-6 right-6 bottom-32 w-[280px] flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${isPlaying ? 'translate-x-[120%]' : 'translate-x-0'}`}>
           <div className="flex-1 rounded-2xl bg-[#0a0a12]/50 backdrop-blur-2xl border border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-6 flex flex-col gap-6 overflow-y-auto">
             
             {/* Profile Button */}
             <div>
               <Link 
                 href="/profile"
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-fuchsia-600/20 to-purple-600/20 hover:from-fuchsia-600/40 hover:to-purple-600/40 border border-fuchsia-500/30 rounded-xl text-fuchsia-100 font-semibold transition-all shadow-[0_0_15px_rgba(217,70,239,0.15)]"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-fuchsia-600/20 to-purple-600/20 hover:from-fuchsia-600/40 hover:to-purple-600/40 border border-fuchsia-500/30 rounded-xl text-fuchsia-100 font-semibold transition-all shadow-[0_0_15px_rgba(217,70,239,0.15)]"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -499,7 +514,7 @@ export default function ClientApp() {
 
               <button
                 onClick={handlePlayPause}
-                className={`flex items-center justify-center gap-2 px-8 py-3.5 rounded-full font-bold text-base shadow-xl transition-all duration-300 ${isPlaying ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-orange-900/30 hover:shadow-orange-900/50 hover:scale-105' : 'bg-gradient-to-r from-teal-500 to-purple-600 text-white shadow-teal-900/30 hover:shadow-teal-900/50 hover:scale-105'}`}
+                className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-full font-bold text-base shadow-xl transition-all duration-300 ${isPlaying ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-orange-900/30 hover:shadow-orange-900/50 hover:scale-105' : 'bg-gradient-to-r from-teal-500 to-purple-600 text-white shadow-teal-900/30 hover:shadow-teal-900/50 hover:scale-105'}`}
               >
                 {isPlaying ? <IconPause /> : <IconPlay />}
                 {isPlaying ? "Pause" : "Play"}
