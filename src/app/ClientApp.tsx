@@ -322,12 +322,12 @@ export default function ClientApp() {
       <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden font-sans">
 
         {/* ── Left Panel ───────────────────────────────────────────── */}
-        <div className={`absolute top-6 left-6 bottom-32 w-[280px] flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${isPlaying ? '-translate-x-[120%]' : 'translate-x-0'}`}>
+        <div className={`absolute top-6 left-6 bottom-32 w-[17.5rem] flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${isPlaying ? '-translate-x-[120%]' : 'translate-x-0'}`}>
           <div className="flex-1 rounded-2xl bg-[#0a0a12]/50 backdrop-blur-2xl border border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-6 flex flex-col gap-6 overflow-y-auto">
             {/* Title */}
             <div>
               <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-teal-300 to-purple-400 mb-1 tracking-tight">
-                Aether Keys
+                Sonaris Piano
               </h1>
               {songName ? (
                 <p className="text-sm text-gray-400 truncate">🎵 {songName}</p>
@@ -409,7 +409,7 @@ export default function ClientApp() {
               {recentSongs.length === 0 ? (
                 <div className="text-sm text-gray-600 italic">No recent songs...</div>
               ) : (
-                <div className="flex flex-col gap-2 max-h-[150px] overflow-y-auto pr-1">
+                <div className="flex flex-col gap-2 max-h-[9.375rem] overflow-y-auto pr-1">
                   {recentSongs.map((song) => (
                     <button
                       key={song.id}
@@ -427,7 +427,7 @@ export default function ClientApp() {
         </div>
 
         {/* ── Right Panel ───────────────────────────────────────────── */}
-        <div className={`absolute top-6 right-6 bottom-32 w-[280px] flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${isPlaying ? 'translate-x-[120%]' : 'translate-x-0'}`}>
+        <div className={`absolute top-6 right-6 bottom-32 w-[17.5rem] flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${isPlaying ? 'translate-x-[120%]' : 'translate-x-0'}`}>
           <div className="flex-1 rounded-2xl bg-[#0a0a12]/50 backdrop-blur-2xl border border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-6 flex flex-col gap-6 overflow-y-auto">
             
             {/* Profile Button */}
@@ -461,9 +461,7 @@ export default function ClientApp() {
                         const ratio = whiteKeys / 52;
                         
                         useStore.getState().updateSettings({ 
-                          keyboardSize: numKeys as any,
-                          cameraPos: [0, -5.5 * ratio, 11 * ratio],
-                          cameraLookAt: [0, -1 * ratio, 0]
+                          keyboardSize: numKeys as any
                         });
                       }}
                       className={`py-2 text-sm font-bold rounded-lg transition-all duration-200 ${Number(currentKeyboardSize) === size ? 'bg-white/20 text-white shadow-lg' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
@@ -480,7 +478,7 @@ export default function ClientApp() {
 
               {/* Render Library Songs */}
               {librarySongs.length > 0 && (
-                <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
+                <div className="flex flex-col gap-2 max-h-[18.75rem] overflow-y-auto pr-1">
                   {librarySongs.map((song) => (
                     <button
                       key={song.id}
@@ -499,15 +497,15 @@ export default function ClientApp() {
         </div>
 
         {/* ── Bottom Controls ───────────────────────────────────────────── */}
-        <div className={`absolute left-1/2 -translate-x-1/2 flex flex-col gap-4 items-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${originalSong ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'} ${isPlaying ? 'bottom-0' : 'bottom-4'}`}>
-          <div className={`transition-all duration-700 bg-[#0a0a12]/70 backdrop-blur-3xl border border-white/10 shadow-[0_16px_60px_rgba(0,0,0,0.7)] flex flex-col items-center overflow-hidden ${isPlaying ? 'rounded-t-2xl px-6 py-2 gap-0 border-b-0 translate-y-[1px]' : 'rounded-3xl px-4 py-3 gap-3'}`}>
+        <div className={`absolute left-1/2 -translate-x-1/2 flex flex-col gap-4 items-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto group ${originalSong ? 'opacity-100' : 'opacity-0 translate-y-8 pointer-events-none'} ${isPlaying ? 'bottom-0 translate-y-[65%] hover:translate-y-0' : 'bottom-4 translate-y-0'}`}>
+          <div className={`transition-all duration-700 bg-[#0a0a12]/70 backdrop-blur-3xl border border-white/10 shadow-[0_16px_60px_rgba(0,0,0,0.7)] flex flex-col items-center overflow-hidden ${isPlaying ? 'rounded-t-2xl px-6 py-2 gap-0 border-b-0' : 'rounded-3xl px-4 py-3 gap-3'}`}>
             
             {/* Play/Pause/Stop */}
             <div className={`flex items-center transition-all duration-700 ${isPlaying ? 'gap-0' : 'gap-4'}`}>
-              <div className={`transition-all duration-700 overflow-hidden ${isPlaying ? 'w-0 opacity-0' : 'w-[42px] opacity-100'}`}>
+              <div className={`transition-all duration-700 overflow-hidden ${isPlaying ? 'w-0 opacity-0' : 'w-[2.625rem] opacity-100'}`}>
                 <button
                   onClick={handleStop}
-                  className="w-[42px] h-[42px] flex items-center justify-center rounded-full border border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-all duration-200"
+                  className="w-[2.625rem] h-[2.625rem] flex items-center justify-center rounded-full border border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-all duration-200"
                   title="Stop"
                 >
                   <IconStop />
@@ -516,7 +514,7 @@ export default function ClientApp() {
 
               <button
                 onClick={handlePlayPause}
-                className={`flex items-center justify-center font-bold transition-all duration-700 ${isPlaying ? 'text-gray-400 hover:text-white bg-transparent hover:scale-110 shadow-none p-0 w-[42px] h-[24px]' : 'bg-gradient-to-r from-teal-500 to-purple-600 text-white shadow-teal-900/30 shadow-xl hover:shadow-teal-900/50 hover:scale-105 rounded-full px-4 py-1.5 gap-2 text-sm w-[90px]'}`}
+                className={`flex items-center justify-center font-bold transition-all duration-700 ${isPlaying ? 'text-gray-400 hover:text-white bg-transparent shadow-none p-0 w-[2.625rem] h-[1.5rem]' : 'bg-gradient-to-r from-teal-500 to-purple-600 text-white shadow-teal-900/30 shadow-xl hover:shadow-teal-900/50 hover:scale-105 rounded-full px-4 py-1.5 gap-2 text-sm w-[5.625rem]'}`}
               >
                 {isPlaying ? <IconPause /> : <IconPlay />}
                 <span className={`transition-all duration-700 overflow-hidden whitespace-nowrap ${isPlaying ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
@@ -526,7 +524,7 @@ export default function ClientApp() {
             </div>
 
             {/* Speed control */}
-            <div className={`flex flex-col items-center transition-all duration-700 overflow-hidden ${isPlaying ? 'max-h-0 opacity-0' : 'max-h-[100px] opacity-100'}`}>
+            <div className={`flex flex-col items-center transition-all duration-700 overflow-hidden ${isPlaying ? 'max-h-0 opacity-0' : 'max-h-[6.25rem] opacity-100'}`}>
               <div className="text-xs text-gray-400 font-semibold tracking-widest uppercase mb-2">Speed</div>
               <div className="flex gap-1 bg-black/40 p-1 rounded-xl">
                 {SPEED_STEPS.map((s) => (

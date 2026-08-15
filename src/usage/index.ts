@@ -1,5 +1,5 @@
 export function track(event: string, properties?: Record<string, any>) {
-  // Stubbed for Aether Keys MVP
+  // Stubbed for Sonaris Piano MVP
 }
 
 export function initUsageTracking() {

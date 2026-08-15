@@ -13,7 +13,7 @@
             {/* Title */}
             <div>
               <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-teal-300 to-purple-400 mb-1 tracking-tight">
-                Aether Keys
+                Sonaris Piano
               </h1>
               {songName ? (
                 <p className="text-sm text-gray-400 truncate">🎵 {songName}</p>

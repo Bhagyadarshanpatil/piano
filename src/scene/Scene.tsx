@@ -196,9 +196,9 @@ function SceneContents({ recState }: { recState: 'idle' | 'recording' }) {
   const isDown = s.fallDirection === 'down'
 
   let scaleX = 1;
-  if (s.keyboardSize === 61) scaleX = 1.25;
-  if (s.keyboardSize === 44) scaleX = 1.45;
-  if (s.keyboardSize === 36) scaleX = 1.6;
+  if (s.keyboardSize === 61) scaleX = 1.4;
+  if (s.keyboardSize === 44) scaleX = 1.8;
+  if (s.keyboardSize === 36) scaleX = 2.0;
 
   return (
     <>
