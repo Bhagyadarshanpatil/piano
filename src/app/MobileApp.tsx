@@ -73,7 +73,7 @@ type LibrarySong = {
   file_url: string;
 };
 
-export default function ClientApp() {
+export default function MobileApp() {
   useEffect(() => {
     const handleFirstInteraction = async () => {
       await Tone.start();
@@ -88,6 +88,8 @@ export default function ClientApp() {
     };
   }, []);
 
+  const [started, setStarted] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [originalSong, setOriginalSong] = useState<ParsedSong | null>(null);
   const [songName, setSongName] = useState<string>("");
   const [loadProgress, setLoadProgress] = useState<{ loaded: number; total: number } | null>(null);
@@ -126,6 +128,29 @@ export default function ClientApp() {
     }
     useStore.getState().updateSettings(update);
   }, [originalSong, difficulty, chromaSync]);
+
+  useEffect(() => {
+    // Default to 36 keys for mobile
+    useStore.getState().updateSettings({ keyboardSize: 36 });
+  }, []);
+
+  const handleStart = async () => {
+    setStarted(true);
+    // Eagerly initialize audio engine
+    audioEngine.init().catch(console.error);
+
+    // Request fullscreen and lock orientation
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      }
+      if (window.screen && window.screen.orientation && (window.screen.orientation as any).lock) {
+        await (window.screen.orientation as any).lock('landscape').catch(() => {});
+      }
+    } catch (err) {
+      console.warn("Fullscreen/Orientation API not fully supported", err);
+    }
+  };
 
   const fetchRecentlyPlayed = useCallback(async () => {
     try {
@@ -196,11 +221,6 @@ export default function ClientApp() {
     fetchRecentlyPlayed();
     handleFetchLibrary();
   }, [handleFetchLibrary, fetchRecentlyPlayed]);
-
-  // Eagerly initialize audio engine so piano keys are playable immediately
-  useEffect(() => {
-    audioEngine.init().catch(console.error);
-  }, []);
 
   const handleLoadLibrarySong = useCallback(async (song: LibrarySong, selectedDiff: Difficulty) => {
     setUploading(true);
@@ -417,86 +437,36 @@ export default function ClientApp() {
                 </button>
               )}
             </div>
-            
-            <div className="mt-auto pt-4 border-t border-white/5">
-              <div className="text-xs text-gray-500 mb-2 font-semibold tracking-wider uppercase">Recently Played</div>
-              {recentSongs.length === 0 ? (
-                <div className="text-sm text-gray-600 italic">No recent songs...</div>
-              ) : (
-                <div className="flex flex-col gap-2 max-h-[9.375rem] overflow-y-auto pr-1">
-                  {recentSongs.map((song) => (
-                    <button
-                      key={song.id}
-                      onClick={() => handleLoadLibrarySong(song, difficulty)}
-                      disabled={uploading}
-                      className="text-left flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-teal-300 text-sm transition-colors duration-200 truncate"
-                    >
-                      <IconMusic /> <span className="truncate">{song.title}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Right Panel ───────────────────────────────────────────── */}
-        <div className={`absolute top-6 right-6 bottom-32 w-[17.5rem] flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto ${isPlaying ? 'translate-x-[120%]' : 'translate-x-0'}`}>
-          <div className="flex-1 rounded-2xl bg-[#0a0a12]/50 backdrop-blur-2xl border border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-6 flex flex-col gap-6 overflow-y-auto">
-            
-            {/* Profile Button */}
-            <div>
-              <Link 
-                href="/profile"
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-fuchsia-600/20 to-purple-600/20 hover:from-fuchsia-600/40 hover:to-purple-600/40 border border-fuchsia-500/30 rounded-xl text-fuchsia-100 font-semibold transition-all shadow-[0_0_15px_rgba(217,70,239,0.15)]"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                My Profile
-              </Link>
-            </div>
-
-            {/* Keyboard Size Settings */}
+            {/* Settings */}
             <div>
               <div className="text-sm text-gray-400 mb-2 font-semibold tracking-wider uppercase">Keyboard Size</div>
               <div className="grid grid-cols-4 gap-1.5 bg-black/40 p-1 rounded-xl">
-                {[36, 44, 61, 88].map((size) => {
-                  return (
-                    <button
-                      key={size}
-                      onClick={() => {
-                        const numKeys = Number(size);
-                        let whiteKeys = 52;
-                        if (numKeys === 61) whiteKeys = 36;
-                        if (numKeys === 44) whiteKeys = 25;
-                        if (numKeys === 36) whiteKeys = 21;
-                        const ratio = whiteKeys / 52;
-                        
-                        useStore.getState().updateSettings({ 
-                          keyboardSize: numKeys as any
-                        });
-                      }}
-                      className={`py-2 text-sm font-bold rounded-lg transition-all duration-200 ${Number(currentKeyboardSize) === size ? 'bg-white/20 text-white shadow-lg' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
-                    >
-                      {size}
-                    </button>
-                  )
-                })}
+                {[36, 44, 61, 88].map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => {
+                      const numKeys = Number(size);
+                      useStore.getState().updateSettings({ keyboardSize: numKeys as any });
+                    }}
+                    className={`py-2 text-sm font-bold rounded-lg transition-all duration-200 ${Number(currentKeyboardSize) === size ? 'bg-white/20 text-white shadow-lg' : 'bg-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                  >
+                    {size}
+                  </button>
+                ))}
               </div>
             </div>
 
             <div className="flex flex-col gap-3">
               <div className="text-sm text-gray-400 font-semibold tracking-wider uppercase">Supabase Library</div>
-
-              {/* Render Library Songs */}
               {librarySongs.length > 0 && (
-                <div className="flex flex-col gap-2 max-h-[18.75rem] overflow-y-auto pr-1">
+                <div className="flex flex-col gap-2 max-h-[12rem] overflow-y-auto pr-1">
                   {librarySongs.map((song) => (
                     <button
                       key={song.id}
-                      onClick={() => handleLoadLibrarySong(song, difficulty)}
+                      onClick={() => {
+                        handleLoadLibrarySong(song, difficulty);
+                        setMenuOpen(false); // Close menu when loaded
+                      }}
                       disabled={uploading}
                       className="text-left flex items-center gap-2 px-3 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-teal-300 text-base transition-colors duration-200 truncate"
                     >
@@ -506,7 +476,12 @@ export default function ClientApp() {
                 </div>
               )}
             </div>
-
+            
+            {/* Overlay to close menu when clicking outside (mobile UX) */}
+            {menuOpen && (
+               <div className="fixed inset-0 z-[-1] bg-black/20" onClick={() => setMenuOpen(false)}></div>
+            )}
+            
           </div>
         </div>
 

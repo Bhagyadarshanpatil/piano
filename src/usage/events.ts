@@ -43,7 +43,7 @@ export type SongSource =
   | 'drop'
 
 /** Live-input origin — a closed enum. */
-export type LiveSource = 'touch' | 'mouse' | 'pc_keyboard' | 'midi'
+export type LiveSource = 'touch' | 'mouse' | 'pc_keyboard' | 'midi' | 'mic'
 
 /**
  * Bucket a note count so the raw size of a user's song never leaves

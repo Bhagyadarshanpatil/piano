@@ -6,6 +6,8 @@ export function initUsageTracking() {
   // Stubbed
 }
 
-export function markLivePlay(type: 'touch' | 'mouse' | 'pc_keyboard' | 'midi') {
+import { LiveSource } from './events';
+
+export function markLivePlay(type: LiveSource) {
   // Stubbed
 }
