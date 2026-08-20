@@ -22,7 +22,7 @@ interface NoteEventTime {
 class PolyMicInputManager {
   private stream:    MediaStream | null = null
   private ctx:       AudioContext | null = null
-  private processor: ScriptProcessorNode | null = null
+  private captureNode: AudioWorkletNode | null = null
 
   // Inference is delegated entirely to a Web Worker — no TF.js on the main thread.
   private worker:      Worker | null = null
@@ -98,11 +98,19 @@ class PolyMicInputManager {
       // 3. Spin up worker if preload() wasn't called
       if (!this.worker) await this.preload()
 
-      // 4. Script processor for audio capture
-      this.processor = this.ctx.createScriptProcessor(4096, 1, 1)
-      const source   = this.ctx.createMediaStreamSource(this.stream)
-      source.connect(this.processor)
-      this.processor.connect(this.ctx.destination)
+      // 4. Capture AudioWorklet to replace deprecated ScriptProcessorNode
+      try {
+        await this.ctx.audioWorklet.addModule('/capture-worklet.js')
+      } catch (err) {
+        console.warn('AudioWorklet load failed, make sure capture-worklet.js is in public dir:', err)
+      }
+      
+      this.captureNode = new AudioWorkletNode(this.ctx, 'capture-processor', {
+        processorOptions: { bufferSize: 4096 }
+      })
+      const source = this.ctx.createMediaStreamSource(this.stream)
+      source.connect(this.captureNode)
+      this.captureNode.connect(this.ctx.destination) // Required by some browsers to keep it alive
 
       let buffer: Float32Array[] = []
       let bufferLength = 0
@@ -113,9 +121,9 @@ class PolyMicInputManager {
       // arrives asynchronously via handleWorkerMessage(). The isProcessing
       // flag prevents concurrent inference calls, but never blocks this
       // callback — chunks keep accumulating while inference runs.
-      this.processor.onaudioprocess = (e) => {
-        const input = e.inputBuffer.getChannelData(0)
-        buffer.push(new Float32Array(input))
+      this.captureNode.port.onmessage = (e) => {
+        const input = e.data.audio
+        buffer.push(input)
         bufferLength += input.length
 
         if (bufferLength >= targetLength && !this.isProcessing && this.workerReady) {
@@ -137,8 +145,6 @@ class PolyMicInputManager {
           const rms = Math.sqrt(sumSq / combined.length)
 
           // Update noise floor ONLY during silence (2× of floor or less).
-          // If updated unconditionally, note audio pulls the floor up and
-          // subsequent soft notes get gated — the opposite of what we want.
           if (rms < this.noiseFloor * 2.0) {
             this.noiseFloor = Math.max(
               NOISE_GATE_MIN,
@@ -155,11 +161,6 @@ class PolyMicInputManager {
           }
 
           // ── Software AGC (pre-amplification) ─────────────────────────────
-          // The ONNX model expects audio at a normal recording level. Soft
-          // playing or a low-gain mic produces low-amplitude signal that causes
-          // the model's confidence scores to drop below threshold even when it
-          // "hears" the note. Boosting to a target peak of ~0.25 restores
-          // confidence without affecting the gate (which ran on raw RMS above).
           let inferBuf = combined
           let peakAmp  = 0
           for (let i = 0; i < combined.length; i++) {
@@ -167,12 +168,13 @@ class PolyMicInputManager {
             if (a > peakAmp) peakAmp = a
           }
           if (peakAmp > 0 && peakAmp < 0.25) {
-            const gain = Math.min(0.25 / peakAmp, 12.0)
+            // Cap the gain multiplier at 4.0x so we don't massively amplify room noise
+            const gain = Math.min(0.25 / peakAmp, 4.0)
             inferBuf = new Float32Array(combined.length)
             for (let i = 0; i < combined.length; i++) inferBuf[i] = combined[i] * gain
           }
 
-          // Hand off to worker — zero cost on this thread
+          // Hand off to worker
           this.worker!.postMessage({ type: 'infer', audio: inferBuf }, [inferBuf.buffer])
         }
       }
@@ -191,10 +193,10 @@ class PolyMicInputManager {
     if (!this.isListening) return
     this.isListening = false
 
-    if (this.processor) {
-      this.processor.disconnect()
-      this.processor.onaudioprocess = null
-      this.processor = null
+    if (this.captureNode) {
+      this.captureNode.disconnect()
+      this.captureNode.port.onmessage = null
+      this.captureNode = null
     }
 
     this.stream?.getTracks().forEach(t => t.stop())
@@ -246,8 +248,9 @@ class PolyMicInputManager {
     for (const note of notes) {
       if (!this.activeNotes.has(note.pitchMidi)) {
         markLivePlay('mic')
-        const velocity = Math.floor(note.amplitude * 127)
-        const handle   = audioEngine.triggerKey(note.pitchMidi, velocity || 80)
+        // engine expects velocity between 0.0 and 1.0, note.amplitude is 0-1
+        const velocity = Math.max(0.1, Math.min(1.0, note.amplitude))
+        const handle   = audioEngine.triggerKey(note.pitchMidi, velocity)
         if (handle) {
           this.activeNotes.set(note.pitchMidi, handle.release)
         }

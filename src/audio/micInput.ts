@@ -296,9 +296,10 @@ class MicInputManager {
     if ((isNew || isSpike) && cooled) {
       this.release()
 
-      // Velocity: log-map RMS to 50–110 range for musical feel
+      // Velocity: log-map RMS to 50–110 range, then normalize to 0.0–1.0 for the engine
       const normRms = Math.min(1, rms / 0.20)
-      const velocity = Math.min(127, Math.round(50 + 60 * Math.pow(normRms, 0.5)))
+      const velocityRaw = Math.min(127, Math.round(50 + 60 * Math.pow(normRms, 0.5)))
+      const velocity = velocityRaw / 127.0 // engine expects 0-1
 
       markLivePlay('mic')
       const handle = audioEngine.triggerKey(best, velocity)

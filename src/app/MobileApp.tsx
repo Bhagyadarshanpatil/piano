@@ -11,6 +11,7 @@ import { applyDifficulty, type Difficulty } from "../utils/difficulty";
 import type { ParsedSong } from "../midi/types";
 import { useMicInput } from "../audio/useMicInput";
 import { usePolyMicInput } from "../audio/usePolyMicInput";
+import { useDspMicInput }  from "../audio/useDspMicInput";
 import { polyMicInput } from "../audio/polyMicInput";
 import Link from 'next/link';
 
@@ -112,6 +113,7 @@ export default function MobileApp() {
   const [chromaSync, setChromaSync] = useState(true);
   const { isListening, toggleListening, supported: micSupported } = useMicInput();
   const { isListening: isPolyListening, toggleListening: togglePolyListening, supported: polySupported } = usePolyMicInput();
+  const { isListening: isDspListening,  toggleListening: toggleDspListening,  supported: dspSupported  } = useDspMicInput();
 
   // Sync track colors when song, difficulty, or chromaSync changes
   useEffect(() => {
@@ -462,6 +464,20 @@ export default function MobileApp() {
                     >
                       <span className={`flex items-center justify-center opacity-80 ${isPolyListening ? 'animate-pulse' : ''}`}><IconMic /></span>
                       {isPolyListening ? "Mic: Polyphonic AI (ON)" : "Polyphonic AI Mode (Detect Chords)"}
+                    </button>
+                  )}
+                  {dspSupported && (
+                    <button
+                      onClick={() => {
+                        if (isListening)     toggleListening()
+                        if (isPolyListening) togglePolyListening()
+                        toggleDspListening()
+                      }}
+                      title={isDspListening ? "DSP Mic active — real-time harmonic analysis" : "Enable DSP Mic (Instant, no model, harmonic sieve)"}
+                      className={`w-full py-2.5 px-4 flex items-center justify-center gap-2.5 text-xs font-semibold rounded-xl border transition-all duration-200 ${isDspListening ? 'bg-gradient-to-br from-emerald-500/20 to-teal-600/20 border-emerald-500/30 text-emerald-300 shadow-[0_0_15px_rgba(52,211,153,0.2)]' : 'bg-white/5 border-white/10 text-gray-500 hover:bg-white/10 hover:text-gray-400'}`}
+                    >
+                      <span className={`flex items-center justify-center opacity-80 ${isDspListening ? 'animate-pulse' : ''}`}><IconMic /></span>
+                      {isDspListening ? "Mic: DSP Mode (ON)" : "DSP Mode (Fast, No AI)"}
                     </button>
                   )}
                 </div>

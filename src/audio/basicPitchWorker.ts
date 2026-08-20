@@ -21,10 +21,10 @@ const FRAMES_PER_WIN = 172     // time frames per window
 const MIDI_BINS      = 88      // 88 piano keys
 const CONTOUR_BINS   = 264     // contour output bins
 
-// Detection thresholds — can be tightened if too many false positives
-const ONSET_THRESH = 0.30
-const FRAME_THRESH = 0.25
-const MIN_NOTE_LEN = 3         // frames (~35 ms)
+// Detection thresholds — tuned up to reject noise and false harmonics
+const ONSET_THRESH = 0.50
+const FRAME_THRESH = 0.35
+const MIN_NOTE_LEN = 4         // frames (~46 ms, rejects clicks/pops)
 
 const FRAMES_PER_SEC = SAMPLE_RATE / 256  // ~86.13
 
@@ -225,16 +225,17 @@ function suppressHarmonics(notes: NoteEventTime[]): NoteEventTime[] {
   const kept: NoteEventTime[] = []
 
   for (const candidate of sorted) {
-    // Suppress if a stronger already-kept note is within 24 semitones below
-    // and shares the same pitch class — this catches octave harmonics.
+    // Suppress if a stronger already-kept note is likely causing this as a harmonic.
+    // This catches Octaves (12, 24), Perfect 12ths (19), and Major 17ths (28).
     const isHarmonic = kept.some(k => {
       const interval = candidate.pitchMidi - k.pitchMidi
-      return (
-        interval > 0 &&
-        interval <= 24 &&
-        candidate.pitchMidi % 12 === k.pitchMidi % 12 &&
-        candidate.amplitude < k.amplitude * 0.7  // only suppress clearly weaker ones
-      )
+      if (interval <= 0 || interval > 28) return false
+      
+      const isOctave = interval % 12 === 0
+      const isP12 = interval === 19
+      const isM17 = interval === 28
+      
+      return (isOctave || isP12 || isM17) && (candidate.amplitude < k.amplitude * 0.85)
     })
     if (!isHarmonic) kept.push(candidate)
   }
