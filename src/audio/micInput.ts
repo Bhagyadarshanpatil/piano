@@ -85,6 +85,7 @@ class MicInputManager {
   private ctx: AudioContext | null = null
   private analyser: AnalyserNode | null = null
   private source: MediaStreamAudioSourceNode | null = null
+  private gainNode: GainNode | null = null
   private hpf: BiquadFilterNode | null = null   // high-pass 60Hz
   private lpf: BiquadFilterNode | null = null    // low-pass 5kHz
 
@@ -166,9 +167,13 @@ class MicInputManager {
       this.analyser = this.ctx.createAnalyser()
       this.analyser.fftSize = BUFFER_SIZE
       this.analyser.smoothingTimeConstant = 0  // No built-in smoothing
+      
+      this.gainNode = this.ctx.createGain()
+      this.gainNode.gain.value = 1.0
 
       this.source = this.ctx.createMediaStreamSource(this.stream)
-      this.source.connect(this.hpf)
+      this.source.connect(this.gainNode)
+      this.gainNode.connect(this.hpf)
       this.hpf.connect(this.lpf)
       this.lpf.connect(this.analyser)
 
@@ -219,6 +224,7 @@ class MicInputManager {
     this.ctx = null
     this.analyser = null
     this.source = null
+    this.gainNode = null
     this.hpf = null
     this.lpf = null
     this.detector = null
@@ -242,6 +248,8 @@ class MicInputManager {
     let sumSq = 0
     for (let i = 0; i < this.buf.length; i++) sumSq += this.buf[i] * this.buf[i]
     const rms = Math.sqrt(sumSq / this.buf.length)
+
+    // (Dynamic Auto-Gain removed as requested)
 
     // ── Silence gate ────────────────────────────────────────────────
     if (rms < RMS_GATE) {

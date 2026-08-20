@@ -7,18 +7,22 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "node scripts/patch-r3f-clock.js && node scripts/patch-postprocessing.js"
+    "copy-onnx-wasm": "node -e \"require('fs').cpSync('node_modules/onnxruntime-web/dist','public/ort-wasm',{recursive:true,filter:(s)=>s.includes('ort-wasm')||s.endsWith('dist')})\"",
+    "postinstall": "node scripts/patch-r3f-clock.js && node scripts/patch-postprocessing.js && npm run copy-onnx-wasm"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
     "@react-three/postprocessing": "^3.0.4",
+    "@spotify/basic-pitch": "^1.0.1",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.2",
+    "@tensorflow/tfjs": "^4.22.0",
     "@tonejs/midi": "^2.0.28",
     "@types/three": "^0.185.4",
     "lucide-react": "^1.29.0",
     "next": "16.3.0",
+    "onnxruntime-web": "^1.27.0",
     "pitchy": "^4.1.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",

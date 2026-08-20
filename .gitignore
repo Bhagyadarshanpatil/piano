@@ -20,6 +20,10 @@
 # production
 /build
 
+# generated model/wasm files (copied from node_modules by postinstall; downloaded once manually)
+/public/ort-wasm
+/public/basic-pitch-onnx
+
 # misc
 .DS_Store
 *.pem

@@ -10,6 +10,8 @@ import { playSong, pauseSong } from "../audio/playback";
 import { applyDifficulty, type Difficulty } from "../utils/difficulty";
 import type { ParsedSong } from "../midi/types";
 import { useMicInput } from "../audio/useMicInput";
+import { usePolyMicInput } from "../audio/usePolyMicInput";
+import { polyMicInput } from "../audio/polyMicInput";
 import Link from 'next/link';
 
 function splitMonoTrack(song: ParsedSong): ParsedSong {
@@ -88,6 +90,13 @@ export default function ClientApp() {
     };
   }, []);
 
+  // Preload the BasicPitch model in the background immediately on mount.
+  // This ensures the model + TF.js WebGL shaders are warm before the user
+  // clicks the poly-mic button, eliminating the perceived load delay.
+  useEffect(() => {
+    polyMicInput.preload();
+  }, []);
+
   const [originalSong, setOriginalSong] = useState<ParsedSong | null>(null);
   const [songName, setSongName] = useState<string>("");
   const [loadProgress, setLoadProgress] = useState<{ loaded: number; total: number } | null>(null);
@@ -100,6 +109,7 @@ export default function ClientApp() {
   const [activeLibrarySong, setActiveLibrarySong] = useState<LibrarySong | null>(null);
   const [chromaSync, setChromaSync] = useState(true);
   const { isListening, toggleListening, supported: micSupported } = useMicInput();
+  const { isListening: isPolyListening, toggleListening: togglePolyListening, supported: polySupported } = usePolyMicInput();
 
   // Sync track colors when song, difficulty, or chromaSync changes
   useEffect(() => {
@@ -404,17 +414,37 @@ export default function ClientApp() {
                 <span className="flex items-center justify-center opacity-80">{chromaSync ? <IconPalette /> : <IconPalette />}</span>
                 {chromaSync ? "ColorX: ON" : "ColorX: OFF"}
               </button>
+            </div>
 
-              {/* Mic toggle */}
+            {/* Mic toggle (Always enabled) */}
+            <div className="flex flex-col gap-6">
               {micSupported && (
-                <button
-                  onClick={() => toggleListening()}
-                  title={isListening ? "Microphone active — play your instrument" : "Enable microphone to play with real instrument"}
-                  className={`w-full py-3 px-4 flex items-center justify-center gap-2.5 text-sm font-semibold rounded-xl border transition-all duration-200 ${isListening ? 'bg-gradient-to-br from-red-500/20 to-orange-600/20 border-red-500/30 text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-300'}`}
-                >
-                  <span className={`flex items-center justify-center opacity-80 ${isListening ? 'animate-pulse' : ''}`}><IconMic /></span>
-                  {isListening ? "Mic: ON" : "Mic: OFF"}
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => {
+                      if (isPolyListening) togglePolyListening()
+                      toggleListening()
+                    }}
+                    title={isListening ? "Microphone active — play your instrument" : "Enable microphone to play with real instrument"}
+                    className={`w-full py-3 px-4 flex items-center justify-center gap-2.5 text-sm font-semibold rounded-xl border transition-all duration-200 ${isListening ? 'bg-gradient-to-br from-red-500/20 to-orange-600/20 border-red-500/30 text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-gray-300'}`}
+                  >
+                    <span className={`flex items-center justify-center opacity-80 ${isListening ? 'animate-pulse' : ''}`}><IconMic /></span>
+                    {isListening ? "Mic: ON (Standard)" : "Mic: OFF"}
+                  </button>
+                  {polySupported && (
+                    <button
+                      onClick={() => {
+                        if (isListening) toggleListening()
+                        togglePolyListening()
+                      }}
+                      title={isPolyListening ? "Polyphonic Mic active" : "Enable Polyphonic AI Mic (Detects Chords, uses more CPU)"}
+                      className={`w-full py-2.5 px-4 flex items-center justify-center gap-2.5 text-xs font-semibold rounded-xl border transition-all duration-200 ${isPolyListening ? 'bg-gradient-to-br from-purple-500/20 to-pink-600/20 border-purple-500/30 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.2)]' : 'bg-white/5 border-white/10 text-gray-500 hover:bg-white/10 hover:text-gray-400'}`}
+                    >
+                      <span className={`flex items-center justify-center opacity-80 ${isPolyListening ? 'animate-pulse' : ''}`}><IconMic /></span>
+                      {isPolyListening ? "Mic: Polyphonic AI (ON)" : "Polyphonic AI Mode (Detect Chords)"}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
             

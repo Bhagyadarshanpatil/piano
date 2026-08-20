@@ -6,6 +6,7 @@ import { resolveTrackColorHex } from "../notes/trackColor";
 import { markLivePlay } from "../usage";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
+import { Html } from "@react-three/drei";
 import {
   BLACK_KEY_LENGTH,
   BLACK_KEY_THICKNESS,
@@ -744,6 +745,22 @@ export function Keyboard() {
                 geometry={whiteBodyGeometryFor(k.midi, settings.keyboardSize)}
                 material={WHITE_BODY_MATERIALS}
               />
+            )}
+            {!isBlack && k.midi % 12 === 0 && (
+              <Html
+                position={[0, -k.length + 0.04, 0.001]} // Position near the front tip
+                center
+                style={{
+                  color: '#999999',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold',
+                  userSelect: 'none',
+                  pointerEvents: 'none',
+                  transform: 'scale(1.2) translateY(5px)'
+                }}
+              >
+                {`C${Math.floor(k.midi / 12) - 1}`}
+              </Html>
             )}
           </group>
         );
